@@ -1,0 +1,38 @@
+.sf-card {
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-5);
+  width: 100%;
+  max-width: 480px;
+  box-sizing: border-box;
+}
+
+.sf-title {
+  margin: 0 0 6px 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.sf-sub {
+  margin: 0 0 var(--spacing-3) 0;
+  color: var(--color-muted);
+  font-size: 0.95rem;
+}
+
+.sf-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.sf-field { display: flex; flex-direction: column; gap: var(--spacing-1); }
+.sf-label { font-size: 0.8125rem; color: var(--color-text); font-weight: 500; }
+.sf-input { padding: 10px var(--spacing-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-2); }
+.sf-input:focus { border-color: var(--color-primary-600); outline: none; }
+.sf-input--error { border-color: var(--color-danger); }
+.sf-error { color: var(--color-danger); font-size: 0.875rem; padding: 8px 0; }
+.sf-submit { margin-top: var(--spacing-1); padding: 10px 12px; background: var(--color-primary-600); color: white; border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; }
+.sf-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+.sf-footer { margin-top: var(--spacing-3); font-size: 0.875rem; color: var(--color-muted); }
