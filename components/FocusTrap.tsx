@@ -19,6 +19,7 @@ export const FocusTrap: React.FC<{children?: React.ReactNode}> = ({children}) =>
 
     function handleKey(e: KeyboardEvent) {
       if (e.key !== 'Tab') return;
+      if (!node) return;
       const focusableEls = getFocusableElements(node);
       if (!focusableEls.length) return;
       const first = focusableEls[0];

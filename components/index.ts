@@ -27,7 +27,3 @@ export {default as Grid} from './Grid';
 export {default as Stack} from './Stack';
 export {default as Form} from './Form';
 export {default as FormField} from './FormField';
-export {default as Icon} from './Icon';
-export {default as TextInput} from './TextInput';
-
-// Add more exports as needed
