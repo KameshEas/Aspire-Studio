@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useProject } from "../../../../lib/hooks";
 import { useActiveOrg } from "../../../../lib/org-context";
 import Card from "../../../../components/Card";
@@ -10,6 +10,7 @@ import Skeleton from "../../../../components/Skeleton";
 
 export default function ProjectDetailPage() {
   const params = useParams<{ projectId: string }>();
+  const router = useRouter();
   const { activeOrgId } = useActiveOrg();
   const { data: project, isLoading } = useProject(activeOrgId ?? "", params.projectId);
 
@@ -47,6 +48,29 @@ export default function ProjectDetailPage() {
         <StatCard label="Assets" value={project.assetCount ?? 0} />
         <StatCard label="Deployments" value={project.deploymentCount ?? 0} />
         <StatCard label="Members" value={project.members?.length ?? 0} />
+      </div>
+
+      {/* Phase 2 Navigation */}
+      <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Studio</h2>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, marginBottom: 32 }}>
+        <NavCard
+          icon="📝"
+          label="Templates"
+          description="Manage prompt templates"
+          onClick={() => router.push(`/projects/${params.projectId}/templates`)}
+        />
+        <NavCard
+          icon="🖼️"
+          label="Artifacts"
+          description="Browse generated outputs"
+          onClick={() => router.push(`/projects/${params.projectId}/artifacts`)}
+        />
+        <NavCard
+          icon="🕒"
+          label="History"
+          description="View all generations"
+          onClick={() => router.push(`/projects/${params.projectId}/generations`)}
+        />
       </div>
 
       {/* Members */}
@@ -91,10 +115,25 @@ export default function ProjectDetailPage() {
       {/* Coming Soon Placeholder */}
       <div style={{ marginTop: 40, textAlign: "center", color: "var(--color-muted)" }}>
         <p style={{ fontSize: 14 }}>
-          Generation studio, asset library, and deployment panels are coming in Phase 2+.
+          Deployment panels and advanced analytics are coming in Phase 3+.
         </p>
       </div>
     </div>
+  );
+}
+
+function NavCard({ icon, label, description, onClick }: { icon: string; label: string; description: string; onClick: () => void }) {
+  return (
+    <Card
+      style={{ padding: "16px 18px", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 12 }}
+      onClick={onClick}
+    >
+      <span style={{ fontSize: 24 }}>{icon}</span>
+      <div>
+        <div style={{ fontWeight: 600, fontSize: 14 }}>{label}</div>
+        <div style={{ fontSize: 12, color: "var(--color-muted)", marginTop: 2 }}>{description}</div>
+      </div>
+    </Card>
   );
 }
 

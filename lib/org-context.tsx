@@ -20,6 +20,9 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
 
   // Keep the API client token in sync with Clerk
   useEffect(() => {
+    // Register a live getter so every request gets a fresh token
+    api.setTokenGetter(getToken);
+
     let mounted = true;
     const sync = async () => {
       const token = await getToken();
