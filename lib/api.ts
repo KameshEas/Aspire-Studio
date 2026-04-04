@@ -3,15 +3,9 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:3002";
 class ApiClient {
   private token: string | null = null;
   private orgId: string | null = null;
-  private tokenGetter: (() => Promise<string | null>) | null = null;
 
   setToken(token: string | null) {
     this.token = token;
-  }
-
-  /** Provide a live token getter so each request fetches a fresh token. */
-  setTokenGetter(getter: () => Promise<string | null>) {
-    this.tokenGetter = getter;
   }
 
   setOrgId(orgId: string | null) {
@@ -19,16 +13,13 @@ class ApiClient {
   }
 
   private async request<T>(path: string, init?: RequestInit): Promise<T> {
-    // Always get a fresh token if a getter is registered
-    const token = this.tokenGetter ? await this.tokenGetter() : this.token;
-
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...(init?.headers as Record<string, string>),
     };
 
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
+    if (this.token) {
+      headers["Authorization"] = `Bearer ${this.token}`;
     }
     if (this.orgId) {
       headers["X-Org-Id"] = this.orgId;
