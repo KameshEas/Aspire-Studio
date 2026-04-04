@@ -39,7 +39,7 @@ export default function ProjectDetailPage() {
             </p>
           )}
         </div>
-        <Button variant="secondary">Settings</Button>
+        <Button variant="secondary" onClick={() => router.push(`/projects/${params.projectId}/settings`)}>Settings</Button>
       </div>
 
       {/* Stats */}
@@ -58,6 +58,12 @@ export default function ProjectDetailPage() {
           label="Templates"
           description="Manage prompt templates"
           onClick={() => router.push(`/projects/${params.projectId}/templates`)}
+        />
+        <NavCard
+          icon="🎛️"
+          label="Studio"
+          description="Create ad-hoc generations"
+          onClick={() => router.push(`/projects/${params.projectId}/studio`)}
         />
         <NavCard
           icon="🖼️"

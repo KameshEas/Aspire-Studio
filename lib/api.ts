@@ -3,6 +3,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:3002";
 class ApiClient {
   private token: string | null = null;
   private orgId: string | null = null;
+  private tokenGetter?: () => Promise<string | null>;
 
   setToken(token: string | null) {
     this.token = token;
@@ -12,14 +13,30 @@ class ApiClient {
     this.orgId = orgId;
   }
 
+  setTokenGetter(getter: () => Promise<string | null>) {
+    this.tokenGetter = getter;
+  }
+
   private async request<T>(path: string, init?: RequestInit): Promise<T> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...(init?.headers as Record<string, string>),
     };
 
-    if (this.token) {
-      headers["Authorization"] = `Bearer ${this.token}`;
+    // Prefer a live token getter if registered (ensures fresh Clerk tokens),
+    // otherwise fall back to the last explicitly set token.
+    let tokenToUse: string | null = this.token;
+    if (this.tokenGetter) {
+      try {
+        const t = await this.tokenGetter();
+        if (t) tokenToUse = t;
+      } catch (e) {
+        // ignore getter errors and fall back to stored token
+      }
+    }
+
+    if (tokenToUse) {
+      headers["Authorization"] = `Bearer ${tokenToUse}`;
     }
     if (this.orgId) {
       headers["X-Org-Id"] = this.orgId;
@@ -122,6 +139,10 @@ class ApiClient {
     return this.request<GenerateResponse>(`/api/v1/orgs/${encodeURIComponent(orgId)}/projects/${encodeURIComponent(projectId)}/generate`, { method: "POST", body: JSON.stringify(data) });
   }
 
+  generateAsync(orgId: string, projectId: string, data: GenerateRequest) {
+    return this.request<{ generationId: string; status: string }>(`/api/v1/orgs/${encodeURIComponent(orgId)}/projects/${encodeURIComponent(projectId)}/generate/async`, { method: "POST", body: JSON.stringify(data) });
+  }
+
   // ── Artifacts ──────────────────────────────────────
   listArtifacts(orgId: string, projectId: string, opts?: { type?: string; limit?: number; cursor?: string }) {
     const params = new URLSearchParams();
@@ -136,6 +157,27 @@ class ApiClient {
   }
   deleteArtifact(orgId: string, projectId: string, artifactId: string) {
     return this.request<{ deleted: boolean }>(`/api/v1/orgs/${encodeURIComponent(orgId)}/projects/${encodeURIComponent(projectId)}/artifacts/${encodeURIComponent(artifactId)}`, { method: "DELETE" });
+  }
+
+  // ── API Keys (project) ─────────────────────────────────
+  listProjectApiKeys(orgId: string, projectId: string) {
+    return this.request<{ id: string; description?: string; scopes: string[]; createdAt: string; revoked: boolean }[]>(
+      `/api/v1/orgs/${encodeURIComponent(orgId)}/projects/${encodeURIComponent(projectId)}/api-keys`
+    );
+  }
+
+  createProjectApiKey(orgId: string, projectId: string, data: { description?: string; scopes?: string[] }) {
+    return this.request<{ id: string; key: string; description?: string; scopes: string[] }>(
+      `/api/v1/orgs/${encodeURIComponent(orgId)}/projects/${encodeURIComponent(projectId)}/api-keys`,
+      { method: "POST", body: JSON.stringify(data) }
+    );
+  }
+
+  revokeProjectApiKey(orgId: string, projectId: string, keyId: string) {
+    return this.request<{ revoked: boolean }>(
+      `/api/v1/orgs/${encodeURIComponent(orgId)}/projects/${encodeURIComponent(projectId)}/api-keys/${encodeURIComponent(keyId)}`,
+      { method: "DELETE" }
+    );
   }
 
   // ── Generations History ────────────────────────────

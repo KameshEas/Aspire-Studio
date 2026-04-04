@@ -191,12 +191,64 @@ export function useGenerate(orgId: string, projectId: string) {
   });
 }
 
+export function useGenerateAsync(orgId: string, projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: GenerateRequest) => api.generateAsync(orgId, projectId, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.generations(orgId, projectId) });
+    },
+  });
+}
+
 // ── Phase 2: Artifacts ─────────────────────────────
 export function useArtifacts(orgId: string, projectId: string, opts?: { type?: string; cursor?: string }) {
   return useQuery({
     queryKey: [...queryKeys.artifacts(orgId, projectId), opts],
     queryFn: () => api.listArtifacts(orgId, projectId, opts),
     enabled: !!orgId && !!projectId,
+  });
+}
+
+// ── API Keys (project) ─────────────────────────────────
+export function useProjectApiKeys(orgId: string, projectId: string) {
+  return useQuery({
+    queryKey: ["orgs", orgId, "projects", projectId, "api-keys"],
+    queryFn: () => api.listProjectApiKeys(orgId, projectId),
+    enabled: !!orgId && !!projectId,
+  });
+}
+
+export function useCreateProjectApiKey(orgId: string, projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { description?: string; scopes?: string[] }) => api.createProjectApiKey(orgId, projectId, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["orgs", orgId, "projects", projectId, "api-keys"] }),
+  });
+}
+
+export function useRevokeProjectApiKey(orgId: string, projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (keyId: string) => api.revokeProjectApiKey(orgId, projectId, keyId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["orgs", orgId, "projects", projectId, "api-keys"] }),
+  });
+}
+
+// ── Project Members ───────────────────────────────────
+export function useProjectMembers(orgId: string, projectId: string) {
+  return useQuery({
+    queryKey: queryKeys.projectMembers(orgId, projectId),
+    queryFn: () => api.listProjectMembers(orgId, projectId),
+    enabled: !!orgId && !!projectId,
+  });
+}
+
+export function useAddProjectMember(orgId: string, projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { userId: string; role?: string }) => api.addProjectMember(orgId, projectId, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.projectMembers(orgId, projectId) }),
   });
 }
 
