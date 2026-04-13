@@ -23,8 +23,6 @@ class ApiClient {
       ...(init?.headers as Record<string, string>),
     };
 
-    // Prefer a live token getter if registered (ensures fresh Clerk tokens),
-    // otherwise fall back to the last explicitly set token.
     let tokenToUse: string | null = this.token;
     if (this.tokenGetter) {
       try {
@@ -42,10 +40,36 @@ class ApiClient {
       headers["X-Org-Id"] = this.orgId;
     }
 
-    const res = await fetch(`${BASE_URL}${path}`, { ...init, headers });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30_000);
+
+    let res: Response;
+    try {
+      res = await fetch(`${BASE_URL}${path}`, {
+        ...init,
+        headers,
+        signal: init?.signal ?? controller.signal,
+      });
+    } catch (err: unknown) {
+      clearTimeout(timeout);
+      if (err instanceof DOMException && err.name === "AbortError") {
+        throw new ApiError(408, "Request timeout");
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({ error: res.statusText }));
+
+      if (res.status === 401) {
+        this.token = null;
+        if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+      }
+
       throw new ApiError(res.status, body.error ?? "Request failed");
     }
 

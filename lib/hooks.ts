@@ -28,7 +28,11 @@ export const queryKeys = {
 
 // ── Me ─────────────────────────────────────────────
 export function useMe() {
-  return useQuery({ queryKey: queryKeys.me, queryFn: () => api.getMe() });
+  return useQuery({
+    queryKey: queryKeys.me,
+    queryFn: () => api.getMe(),
+    staleTime: 5 * 60_000,
+  });
 }
 
 // ── Orgs ───────────────────────────────────────────

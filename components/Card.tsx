@@ -1,10 +1,9 @@
 import React from 'react';
 
-import './base.css';
-
-export const Card: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({children, ...rest}) => {
+export const Card: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ children, className = '', ...rest }) => {
+  const base = 'bg-white rounded-xl border border-gray-100 shadow-md p-6';
   return (
-    <div {...rest} className={`card ${rest.className || ''}`}>
+    <div {...rest} className={`${base} ${className}`.trim()}>
       {children}
     </div>
   );

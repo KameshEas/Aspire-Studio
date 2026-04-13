@@ -16,33 +16,35 @@ const OrgContext = createContext<OrgContextType>({
 
 export function OrgProvider({ children }: { children: React.ReactNode }) {
   const { getToken } = useAuth();
-  const [activeOrgId, setActiveOrgId] = useState<string | null>(null);
+  const [activeOrgId, setActiveOrgId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("aspire_active_org") ?? null;
+    }
+    return null;
+  });
 
   // Keep the API client token in sync with Clerk
   useEffect(() => {
-    // Register a live getter so every request gets a fresh token
     api.setTokenGetter(getToken);
 
-    let mounted = true;
+    const controller = new AbortController();
     const sync = async () => {
-      const token = await getToken();
-      if (mounted) api.setToken(token);
+      try {
+        const token = await getToken();
+        if (!controller.signal.aborted) api.setToken(token);
+      } catch {
+        // ignore token refresh errors
+      }
     };
     sync();
-    const id = setInterval(sync, 50_000); // refresh before expiry
-    return () => { mounted = false; clearInterval(id); };
+    const id = setInterval(sync, 50_000);
+    return () => { controller.abort(); clearInterval(id); };
   }, [getToken]);
 
   // Keep org header in sync
   useEffect(() => {
     api.setOrgId(activeOrgId);
   }, [activeOrgId]);
-
-  // Restore from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem("aspire_active_org");
-    if (saved) setActiveOrgId(saved);
-  }, []);
 
   const updateOrg = (id: string | null) => {
     setActiveOrgId(id);
