@@ -290,3 +290,40 @@ export function useGeneration(orgId: string, projectId: string, generationId: st
     enabled: !!orgId && !!projectId && !!generationId,
   });
 }
+
+// ── Workflows (Agent Orchestration) ────────────────
+export function useAvailableAgents() {
+  return useQuery({
+    queryKey: ["workflows", "agents"] as const,
+    queryFn: () => api.getAvailableAgents(),
+    staleTime: 10 * 60_000, // 10 minutes
+  });
+}
+
+export function useExecuteWorkflow() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: Parameters<typeof api.executeWorkflow>[0]) => api.executeWorkflow(request),
+    onSuccess: (data) => {
+      // Invalidate workflows list
+      queryClient.invalidateQueries({ queryKey: ["workflows", "list"] });
+    },
+  });
+}
+
+export function useWorkflowStatus(executionId: string | null) {
+  return useQuery({
+    queryKey: ["workflows", "status", executionId] as const,
+    queryFn: () => (executionId ? api.getWorkflowStatus(executionId) : Promise.resolve(null)),
+    enabled: !!executionId,
+    refetchInterval: 2000, // Poll every 2 seconds
+  });
+}
+
+export function useWorkflowsList() {
+  return useQuery({
+    queryKey: ["workflows", "list"] as const,
+    queryFn: () => api.listWorkflows(),
+    refetchInterval: 5000, // Poll every 5 seconds
+  });
+}

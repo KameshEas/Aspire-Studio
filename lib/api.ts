@@ -216,7 +216,29 @@ class ApiClient {
   }
   getGeneration(orgId: string, projectId: string, generationId: string) {
     return this.request<GenerationDetail>(`/api/v1/orgs/${encodeURIComponent(orgId)}/projects/${encodeURIComponent(projectId)}/generations/${encodeURIComponent(generationId)}`);
-  }}
+  }
+
+  // ── Workflows (Agent Orchestration) ────────────────
+  listWorkflows(opts?: { executionId?: string; status?: string }) {
+    const params = new URLSearchParams();
+    if (opts?.executionId) params.set("executionId", opts.executionId);
+    if (opts?.status) params.set("status", opts.status);
+    const qs = params.toString();
+    return this.request<WorkflowListResponse>(`/api/v1/workflows${qs ? `?${qs}` : ""}`);
+  }
+  getWorkflowStatus(executionId: string) {
+    return this.request<WorkflowExecution>(`/api/v1/workflows?executionId=${encodeURIComponent(executionId)}`);
+  }
+  executeWorkflow(data: WorkflowExecutionRequest) {
+    return this.request<WorkflowExecutionResponse>("/api/v1/workflows", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+  getAvailableAgents() {
+    return this.request<AvailableAgentsResponse>("/api/v1/workflows/agents");
+  }
+}
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -404,6 +426,56 @@ export interface GenerationDetail extends GenerationSummary {
 export interface GenerationListResponse {
   items: GenerationSummary[];
   nextCursor: string | null;
+}
+
+// ── Workflow Types (Agent Orchestration) ─────────────
+
+export interface WorkflowExecution {
+  id: string;
+  workflowId: string;
+  status: "pending" | "running" | "completed" | "failed";
+  input: WorkflowExecutionRequest;
+  result?: {
+    success: boolean;
+    taskType: string;
+    results?: Record<string, unknown>;
+    aggregatedCost?: {
+      agentName: string;
+      totalTokensUsed: number;
+      totalInvocations: number;
+      averageTokensPerInvocation: number;
+      estimatedCostUSD?: number;
+    };
+    executionOrder?: string[];
+    error?: string;
+  };
+  error?: string;
+  startedAt?: string;
+  completedAt?: string;
+  durationMs?: number;
+}
+
+export interface WorkflowExecutionRequest {
+  taskType: "brand" | "ui" | "content" | "code" | "seo" | "deployment" | "multi-step";
+  agentInputs: Record<string, unknown>;
+  dependencies?: ("brand" | "ui" | "content" | "code" | "seo" | "deployment")[];
+}
+
+export interface WorkflowExecutionResponse {
+  executionId: string;
+  status: "pending";
+  message: string;
+}
+
+export interface WorkflowListResponse {
+  executions?: WorkflowExecution[];
+  total?: number;
+}
+
+export interface AvailableAgentsResponse {
+  agents: string[];
+  count?: number;
+  description?: string;
 }
 
 export const api = new ApiClient();

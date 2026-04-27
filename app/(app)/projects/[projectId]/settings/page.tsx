@@ -2,8 +2,8 @@
 
 import React from "react";
 import { useParams, useRouter } from "next/navigation";
-import Card from "../../../../../../components/Card";
-import Button from "../../../../../../components/Button";
+import Card from "../../../../../components/Card";
+import Button from "../../../../../components/Button";
 
 export default function SettingsIndex() {
   const params = useParams<{ projectId: string }>();

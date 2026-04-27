@@ -37,7 +37,7 @@ export default function ApiKeysPage() {
       <Card style={{ padding: 12, marginBottom: 12 }}>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <input value={description} onChange={(e) => setDescription(e.currentTarget.value)} placeholder="Key description" style={{ flex: 1, padding: 8 }} />
-          <Button variant="primary" onClick={onCreate} disabled={!description || createKey.isLoading}>Create Key</Button>
+          <Button variant="primary" onClick={onCreate} disabled={!description || createKey.isPending}>Create Key</Button>
         </div>
         {createdKey && (
           <div style={{ marginTop: 12 }}>

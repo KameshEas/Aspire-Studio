@@ -136,6 +136,20 @@
   padding: 0 8px;
 }
 
+.sidebar__project-subnav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 14px;
+  margin-bottom: 4px;
+}
+
+.sidebar__link--nested {
+  padding-left: 20px;
+  font-size: 12px;
+  gap: 6px;
+}
+
 .sidebar__empty {
   font-size: 12px;
   color: var(--color-muted);
@@ -145,6 +159,35 @@
 .sidebar__footer {
   margin-top: auto;
   padding: 0 var(--spacing-3, 16px);
+}
+
+/* ── Project Tabs ──────────────────────────────────── */
+
+.project-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--color-border, #e6eef6);
+  margin-bottom: var(--spacing-4, 24px);
+}
+
+.project-tabs__tab {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-muted, #64748b);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color var(--motion-durationShort, 160ms),
+    border-color var(--motion-durationShort, 160ms);
+}
+.project-tabs__tab:hover {
+  color: var(--color-text);
+}
+.project-tabs__tab--active {
+  color: var(--color-primary-600, #0ea5a4);
+  border-bottom-color: var(--color-primary-600, #0ea5a4);
+  font-weight: 600;
 }
 
 /* ── App Header ────────────────────────────────────── */

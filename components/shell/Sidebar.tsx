@@ -7,6 +7,13 @@ import { UserButton } from "@clerk/nextjs";
 import { useOrgs, useProjects } from "../../lib/hooks";
 import { useActiveOrg } from "../../lib/org-context";
 
+const PROJECT_SUBNAV = [
+  { href: "/templates", label: "Templates", icon: "📝" },
+  { href: "/studio", label: "Studio", icon: "🎛️" },
+  { href: "/artifacts", label: "Artifacts", icon: "🖼️" },
+  { href: "/generations", label: "History", icon: "🕒" },
+];
+
 export default function Sidebar() {
   const pathname = usePathname();
   const { data: orgs } = useOrgs();
@@ -76,16 +83,39 @@ export default function Sidebar() {
             </Link>
           </div>
           <div className="sidebar__project-list">
-            {projects?.map((p) => (
-              <Link
-                key={p.id}
-                href={`/projects/${p.id}`}
-                className={`sidebar__link sidebar__link--sub ${pathname === `/projects/${p.id}` ? "sidebar__link--active" : ""}`}
-              >
-                <span className="sidebar__project-dot" />
-                {p.name}
-              </Link>
-            ))}
+            {projects?.map((p) => {
+              const isActive = pathname.startsWith(`/projects/${p.id}`);
+              return (
+                <React.Fragment key={p.id}>
+                  <Link
+                    href={`/projects/${p.id}`}
+                    className={`sidebar__link sidebar__link--sub ${isActive ? "sidebar__link--active" : ""}`}
+                  >
+                    <span className="sidebar__project-dot" />
+                    {p.name}
+                  </Link>
+                  {isActive && (
+                    <div className="sidebar__project-subnav">
+                      {PROJECT_SUBNAV.map((sub) => (
+                        <Link
+                          key={sub.href}
+                          href={`/projects/${p.id}${sub.href}`}
+                          className={`sidebar__link sidebar__link--nested ${
+                            sub.href === ""
+                              ? pathname === `/projects/${p.id}`
+                              : pathname.startsWith(`/projects/${p.id}${sub.href}`)
+                              ? "sidebar__link--active"
+                              : ""
+                          }`}
+                        >
+                          {sub.icon} {sub.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </React.Fragment>
+              );
+            })}
             {projects?.length === 0 && (
               <p className="sidebar__empty">No projects yet</p>
             )}

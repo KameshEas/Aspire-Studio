@@ -1,9 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 let formsPlugin = null;
 try {
-  // try to require the optional forms plugin; if it's not installed, skip it
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   formsPlugin = require('@tailwindcss/forms');
-} catch (e) {
+} catch {
   formsPlugin = null;
 }
 
