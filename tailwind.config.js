@@ -13,6 +13,7 @@ module.exports = {
     './components/**/*.{js,ts,jsx,tsx}',
     './lib/**/*.{js,ts,jsx,tsx}'
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -51,7 +52,53 @@ module.exports = {
         sm: '0 1px 2px rgba(0,0,0,0.06)',
         md: '0 4px 12px rgba(0,0,0,0.08)',
         lg: '0 8px 24px rgba(0,0,0,0.12)'
-      }
+      },
+      animation: {
+        'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'spin': 'spin 1s linear infinite',
+        'bounce': 'bounce 1s infinite',
+        'shimmer': 'shimmer 2s infinite',
+        'fade-in': 'fade-in 300ms ease-in-out',
+        'fade-out': 'fade-out 300ms ease-in-out',
+        'slide-in': 'slide-in 300ms ease-out',
+        'slide-out': 'slide-out 300ms ease-in',
+        'scale-in': 'scale-in 200ms cubic-bezier(0.4, 0, 0.2, 1)',
+        'bounce-in': 'bounce-in 500ms cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+      },
+      keyframes: {
+        shimmer: {
+          '0%': { backgroundPosition: '-1000px 0' },
+          '100%': { backgroundPosition: '1000px 0' },
+        },
+        'fade-in': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        'fade-out': {
+          '0%': { opacity: '1' },
+          '100%': { opacity: '0' },
+        },
+        'slide-in': {
+          '0%': { transform: 'translateY(-10px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        'slide-out': {
+          '0%': { transform: 'translateY(0)', opacity: '1' },
+          '100%': { transform: 'translateY(-10px)', opacity: '0' },
+        },
+        'scale-in': {
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        'bounce-in': {
+          '0%': { transform: 'scale(0)', opacity: '0' },
+          '50%': { opacity: '1' },
+          '100%': { transform: 'scale(1)' },
+        },
+      },
+      transitionTimingFunction: {
+        'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
+      },
     }
   },
   plugins: [

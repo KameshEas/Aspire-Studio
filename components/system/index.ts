@@ -40,6 +40,20 @@ export {
   type StatusIndicatorProps,
 } from "./States";
 
+// Skeleton Components
+export {
+  Skeleton,
+  SkeletonCard,
+  SkeletonTable,
+  SkeletonText,
+  SkeletonGrid,
+  type SkeletonProps,
+  type SkeletonCardProps,
+  type SkeletonTableProps,
+  type SkeletonTextProps,
+  type SkeletonGridProps,
+} from "./Skeleton";
+
 // Dialog/Modal
 export {
   Dialog,
@@ -68,3 +82,24 @@ export {
   type StackProps,
   type SectionProps,
 } from "./Layout";
+
+// Micro-Interactions
+export {
+  ScalePulse,
+  FadeIn,
+  SlideIn,
+  SuccessCheckmark,
+  Shake,
+  BounceIn,
+  HoverLift,
+  Ripple,
+  Stagger,
+  type MicroInteractionProps,
+  type FadeInProps,
+  type SlideInProps,
+  type ShakeProps,
+  type BounceInProps,
+  type HoverLiftProps,
+  type RippleProps,
+  type StaggerProps,
+} from "./Interactions";

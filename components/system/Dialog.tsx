@@ -113,7 +113,7 @@ export const DialogContent = React.forwardRef<
       <>
         {/* Backdrop */}
         <div
-          className="fixed inset-0 bg-black/50 z-40"
+          className="fixed inset-0 bg-black/50 dark:bg-black/70 z-40 animate-fade-in"
           onClick={handleBackdropClick}
           aria-hidden="true"
         />
@@ -133,19 +133,20 @@ export const DialogContent = React.forwardRef<
         >
           <div
             className={`
-              bg-white rounded-lg shadow-xl
+              bg-white dark:bg-gray-800
+              rounded-lg shadow-xl animate-scale-in
               ${sizeMap[size]} w-full max-h-[90vh] overflow-y-auto
               ${className}
             `}
           >
             {/* Header */}
             {(title || closeButton) && (
-              <div className="flex items-start justify-between p-6 border-b border-gray-200">
+              <div className="flex items-start justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                 <div>
                   {title && (
                     <h2
                       id="dialog-title"
-                      className="text-lg font-semibold text-gray-900"
+                      className="text-lg font-semibold text-gray-900 dark:text-gray-100"
                     >
                       {title}
                     </h2>
@@ -153,7 +154,7 @@ export const DialogContent = React.forwardRef<
                   {description && (
                     <p
                       id="dialog-description"
-                      className="text-sm text-gray-600 mt-1"
+                      className="text-sm text-gray-600 dark:text-gray-400 mt-1"
                     >
                       {description}
                     </p>
@@ -163,7 +164,7 @@ export const DialogContent = React.forwardRef<
                 {closeButton && (
                   <button
                     onClick={() => onOpenChange?.(false)}
-                    className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+                    className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl leading-none transition-colors"
                     aria-label="Close dialog"
                     type="button"
                   >

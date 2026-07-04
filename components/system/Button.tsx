@@ -11,10 +11,12 @@ import { colors, spacing, radius, motion, sizing } from "./tokens";
 const buttonVariants = cva(
   // Base styles
   `
-    inline-flex items-center justify-center gap-2 font-medium transition-all
-    duration-150 ease-out disabled:opacity-50 disabled:cursor-not-allowed
+    inline-flex items-center justify-center gap-2 font-medium
+    transition-all duration-150 ease-out
+    disabled:opacity-50 disabled:cursor-not-allowed
     focus:outline-none focus:ring-2 focus:ring-offset-2
-    active:scale-95
+    dark:focus:ring-offset-gray-900
+    active:scale-95 hover:scale-105
   `,
   {
     variants: {
@@ -22,22 +24,28 @@ const buttonVariants = cva(
         primary: `
           bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800
           focus:ring-indigo-500 disabled:bg-indigo-400
+          dark:bg-indigo-500 dark:hover:bg-indigo-600 dark:active:bg-indigo-700
         `,
         secondary: `
           bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400
           focus:ring-gray-500 disabled:bg-gray-100
+          dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600
+          dark:active:bg-gray-500 dark:disabled:bg-gray-800
         `,
         ghost: `
           bg-transparent text-indigo-600 hover:bg-indigo-50 active:bg-indigo-100
           focus:ring-indigo-500 disabled:text-gray-400
+          dark:text-indigo-400 dark:hover:bg-indigo-950 dark:active:bg-indigo-900
         `,
         danger: `
           bg-red-600 text-white hover:bg-red-700 active:bg-red-800
           focus:ring-red-500 disabled:bg-red-400
+          dark:bg-red-500 dark:hover:bg-red-600 dark:active:bg-red-700
         `,
         success: `
           bg-green-600 text-white hover:bg-green-700 active:bg-green-800
           focus:ring-green-500 disabled:bg-green-400
+          dark:bg-green-500 dark:hover:bg-green-600 dark:active:bg-green-700
         `,
       },
 

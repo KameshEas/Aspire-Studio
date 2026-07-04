@@ -134,6 +134,60 @@ export const radius = {
   full: "9999px",
 } as const;
 
+// ─── Dark Mode ──────────────────────────────────────────────
+
+export const colorsDark = {
+  text: {
+    primary: "#f5f5f5",      // Light text on dark
+    secondary: "#b4b4b4",    // Secondary text on dark
+    muted: "#808080",        // Muted text on dark
+    disabled: "#4a4a4a",     // Disabled text on dark
+    inverse: "#1a1a1a",      // Dark text on light backgrounds
+  },
+
+  background: {
+    primary: "#1a1a1a",
+    secondary: "#252525",
+    tertiary: "#2d2d2d",
+    surface: "#1f1f1f",
+    surfaceHover: "#2a2a2a",
+    surfaceActive: "#333333",
+  },
+
+  border: {
+    light: "#404040",
+    default: "#525252",
+    strong: "#707070",
+  },
+
+  status: {
+    success: {
+      light: "#064e3b",
+      main: "#10b981",
+      dark: "#059669",
+      text: "#d1fae5",
+    },
+    error: {
+      light: "#7f1d1d",
+      main: "#f87171",
+      dark: "#ef4444",
+      text: "#fee2e2",
+    },
+    warning: {
+      light: "#78350f",
+      main: "#fbbf24",
+      dark: "#f59e0b",
+      text: "#fef3c7",
+    },
+    info: {
+      light: "#0c2340",
+      main: "#60a5fa",
+      dark: "#3b82f6",
+      text: "#dbeafe",
+    },
+  },
+} as const;
+
 // ─── Motion ─────────────────────────────────────────────────
 
 export const motion = {

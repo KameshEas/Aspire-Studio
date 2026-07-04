@@ -33,36 +33,36 @@ interface ToastItemProps {
 const ToastItem: React.FC<ToastItemProps> = ({ toast, onDismiss }) => {
   const variants = {
     success: {
-      bg: "bg-green-50",
-      border: "border-green-200",
-      title: "text-green-900",
-      text: "text-green-800",
+      bg: "bg-green-50 dark:bg-green-950/40",
+      border: "border-green-200 dark:border-green-800",
+      title: "text-green-900 dark:text-green-200",
+      text: "text-green-800 dark:text-green-300",
       icon: "✓",
-      iconBg: "bg-green-100 text-green-600",
+      iconBg: "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400",
     },
     error: {
-      bg: "bg-red-50",
-      border: "border-red-200",
-      title: "text-red-900",
-      text: "text-red-800",
+      bg: "bg-red-50 dark:bg-red-950/40",
+      border: "border-red-200 dark:border-red-800",
+      title: "text-red-900 dark:text-red-200",
+      text: "text-red-800 dark:text-red-300",
       icon: "✕",
-      iconBg: "bg-red-100 text-red-600",
+      iconBg: "bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400",
     },
     warning: {
-      bg: "bg-amber-50",
-      border: "border-amber-200",
-      title: "text-amber-900",
-      text: "text-amber-800",
+      bg: "bg-amber-50 dark:bg-amber-950/40",
+      border: "border-amber-200 dark:border-amber-800",
+      title: "text-amber-900 dark:text-amber-200",
+      text: "text-amber-800 dark:text-amber-300",
       icon: "⚠",
-      iconBg: "bg-amber-100 text-amber-600",
+      iconBg: "bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400",
     },
     info: {
-      bg: "bg-blue-50",
-      border: "border-blue-200",
-      title: "text-blue-900",
-      text: "text-blue-800",
+      bg: "bg-blue-50 dark:bg-blue-950/40",
+      border: "border-blue-200 dark:border-blue-800",
+      title: "text-blue-900 dark:text-blue-200",
+      text: "text-blue-800 dark:text-blue-300",
       icon: "ℹ",
-      iconBg: "bg-blue-100 text-blue-600",
+      iconBg: "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400",
     },
   };
 
@@ -74,7 +74,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onDismiss }) => {
         ${variant.bg} ${variant.border}
         border rounded-lg shadow-lg p-4 max-w-md
         flex gap-3 items-start pointer-events-auto
-        animate-in slide-in-from-bottom-4 fade-in duration-300
+        animate-slide-in duration-300
       `}
       role="status"
       aria-live="polite"
