@@ -1,101 +1,162 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useFormState } from "@/lib/hooks/useFormState";
+import { useToast } from "@/lib/hooks/useToast";
+import {
+  Container,
+  Stack,
+  Flex,
+  Button,
+  Form,
+  FormField,
+  Input,
+} from "@/components/system";
 
 export default function OnboardingStep1Page() {
   const router = useRouter();
-  const [orgName, setOrgName] = useState("");
-  const [slug, setSlug] = useState("acme-studio");
+  const { success, error: showError } = useToast();
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    // TODO: persist workspace to backend or user metadata
-    router.push("/onboarding/success");
-  }
+  const form = useFormState({
+    initialValues: { orgName: "", slug: "" },
+    validate: (v) => ({
+      ...(v.orgName.length === 0 && { orgName: "Organization name required" }),
+      ...(v.orgName.length < 2 && v.orgName.length > 0 && { orgName: "Min 2 characters" }),
+      ...(v.slug.length === 0 && { slug: "Workspace URL required" }),
+      ...(v.slug.length < 2 && v.slug.length > 0 && { slug: "Min 2 characters" }),
+      ...(!v.slug.match(/^[a-z0-9-]+$/) && v.slug.length > 0 && { slug: "Only lowercase letters, numbers, and hyphens" }),
+    }),
+    onSubmit: async (v) => {
+      try {
+        success({
+          title: "Workspace created",
+          description: `Welcome to ${v.orgName}!`,
+        });
+        setTimeout(() => {
+          router.push("/onboarding/success");
+        }, 1000);
+      } catch (err) {
+        showError({
+          title: "Failed to create workspace",
+          description: err instanceof Error ? err.message : "Unknown error",
+        });
+      }
+    },
+  });
+
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  };
+
+  useEffect(() => {
+    if (form.values.orgName && !form.touched.slug) {
+      form.setValue("slug", generateSlug(form.values.orgName));
+    }
+  }, [form.values.orgName]);
+
+  const previewUrl = form.values.slug ? `aspire.studio/${form.values.slug}` : "aspire.studio/workspace";
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-surface selection:bg-primary/20">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50">
+      {/* Logo Header */}
       <div className="mb-10 flex flex-col items-center">
-        <div className="flex items-center gap-2 mb-8">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200/30">
-            <span className="text-white font-bold text-2xl tracking-tighter">A</span>
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-500 rounded-lg flex items-center justify-center shadow-lg">
+            <span className="text-white font-bold text-xl">A</span>
           </div>
-          <span className="text-xl font-semibold tracking-tight text-on-surface">Aspire Studio</span>
+          <span className="text-xl font-bold tracking-tight text-gray-900">Aspire Studio</span>
         </div>
 
-        <div className="flex gap-2 mb-2">
+        {/* Progress indicator */}
+        <div className="flex gap-2">
           <div className="h-1.5 w-8 rounded-full bg-gradient-to-br from-indigo-600 to-purple-500" />
-          <div className="h-1.5 w-1.5 rounded-full bg-white/90" />
+          <div className="h-1.5 w-1.5 rounded-full bg-gray-300" />
         </div>
       </div>
 
-      <main className="w-full max-w-[640px] bg-white rounded-3xl shadow-xl shadow-neutral-900/5 border border-surface-container overflow-hidden">
+      {/* Main Card */}
+      <div className="w-full max-w-[640px] bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
         <div className="p-8 md:p-12">
-          <div className="mb-10 text-center">
-            <h1 className="text-4xl font-extrabold text-on-surface tracking-tight mb-3">Set up your workspace</h1>
-            <p className="text-on-surface-variant text-lg">Let's get started by naming your creative environment.</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-on-surface ml-1" htmlFor="org-name">Organization name</label>
-              <div className="relative">
-                <input
-                  id="org-name"
-                  value={orgName}
-                  onChange={(e) => setOrgName(e.target.value)}
-                  placeholder="e.g. Acme Design Studio"
-                  className="w-full h-14 px-5 bg-surface-container-low border-0 rounded-2xl text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary/20 transition-all text-lg"
-                  type="text"
-                />
-              </div>
+          <Stack spacing="lg">
+            {/* Heading */}
+            <div className="text-center">
+              <h1 className="text-4xl font-bold text-gray-900 mb-3">Set up your workspace</h1>
+              <p className="text-gray-600 text-lg">Let's get started by naming your creative environment.</p>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex justify-between items-end ml-1">
-                <label className="block text-sm font-semibold text-on-surface" htmlFor="workspace-url">Workspace URL</label>
-                <span className="text-[11px] font-bold text-green-600 flex items-center gap-1 uppercase tracking-wider">
-                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'wght' 700" }}>check_circle</span>
-                  Available
-                </span>
-              </div>
+            {/* Form */}
+            <Form onSubmit={form.handleSubmit}>
+              <Stack spacing="lg">
+                {/* Organization Name */}
+                <FormField
+                  label="Organization Name"
+                  description="This is your workspace name"
+                  error={form.getError("orgName")}
+                  required
+                >
+                  <Input
+                    placeholder="e.g., Acme Design Studio"
+                    {...form.getFieldProps("orgName")}
+                  />
+                </FormField>
 
-              <div className="relative">
-                <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-outline text-lg">aspire.studio/</div>
-                <input
-                  id="workspace-url"
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  className="w-full h-14 pl-[124px] pr-12 bg-surface-container-low border-0 rounded-2xl text-on-surface focus:ring-2 focus:ring-primary/20 transition-all text-lg font-medium"
-                  type="text"
-                />
-                <div className="absolute inset-y-0 right-4 flex items-center">
-                  <span className="material-symbols-outlined text-green-600" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                {/* Workspace URL */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-semibold text-gray-900">Workspace URL</label>
+                    {form.values.slug && (
+                      <span className="text-xs font-medium text-green-600 flex items-center gap-1">
+                        ✓ Available
+                      </span>
+                    )}
+                  </div>
+                  <FormField error={form.getError("slug")}>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-600 text-sm font-medium">
+                        aspire.studio/
+                      </div>
+                      <Input
+                        placeholder="workspace-url"
+                        className="pl-32"
+                        {...form.getFieldProps("slug")}
+                      />
+                    </div>
+                  </FormField>
+
+                  {/* URL Preview */}
+                  {form.values.slug && (
+                    <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-100 rounded-lg">
+                      <span className="text-xs font-medium text-blue-900">Preview:</span>
+                      <code className="text-xs text-blue-700 font-mono">https://{previewUrl}</code>
+                    </div>
+                  )}
                 </div>
-              </div>
 
-              <div className="flex items-center justify-center pt-2">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/5 rounded-full">
-                  <span className="text-xs font-medium text-primary">Preview:</span>
-                  <span className="text-xs font-semibold text-primary/80">https://aspire.studio/{slug}</span>
+                {/* Info Box */}
+                <div className="text-sm bg-amber-50 border border-amber-100 rounded-lg p-3">
+                  <p className="text-amber-900 font-medium mb-1">ℹ️ You can change these settings later</p>
+                  <p className="text-amber-800 text-xs">By continuing, you agree to our Terms of Service and Privacy Policy.</p>
                 </div>
-              </div>
-            </div>
 
-            <div className="pt-4">
-              <button type="submit" className="w-full h-14 bg-gradient-to-r from-indigo-600 to-purple-500 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200/25 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 text-lg">
-                Continue
-                <span className="material-symbols-outlined">arrow_forward</span>
-              </button>
-            </div>
-          </form>
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  loading={form.isSubmitting}
+                  disabled={!form.isValid}
+                  className="w-full"
+                >
+                  Continue →
+                </Button>
+              </Stack>
+            </Form>
+          </Stack>
         </div>
-
-        <div className="bg-surface-container-low px-8 py-5 border-t border-surface-container/50 text-center">
-          <p className="text-xs text-on-surface-variant leading-relaxed">You can change these settings later in your <span className="font-semibold">Workspace Settings</span>. By continuing, you agree to our Terms of Service.</p>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }

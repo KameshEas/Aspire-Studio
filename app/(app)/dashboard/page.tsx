@@ -2,180 +2,363 @@
 
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useProjects, useCreateProject } from "../../../lib/hooks";
 import { useOrgs } from "../../../lib/hooks";
 import { useActiveOrg } from "../../../lib/org-context";
-import Card from "../../../components/Card";
-import Button from "../../../components/Button";
-import Skeleton from "../../../components/Skeleton";
-import Modal from "../../../components/Modal";
+import { useFormState } from "../../../lib/hooks/useFormState";
+import { useToast } from "../../../lib/hooks/useToast";
+
+import {
+  Container,
+  Flex,
+  Grid,
+  Stack,
+  Form,
+  FormField,
+  Input,
+  Textarea,
+  Button,
+  Dialog,
+  DialogContent,
+  useDialog,
+  LoadingState,
+  EmptyState as SystemEmptyState,
+} from "../../../components/system";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { activeOrgId } = useActiveOrg();
+  const { success, error: showError } = useToast();
+  const { isOpen, open, close } = useDialog();
+
   const { data: orgs, isLoading: orgsLoading } = useOrgs();
   const { data: projects, isLoading } = useProjects(activeOrgId ?? "");
   const createProject = useCreateProject(activeOrgId ?? "");
-  const [showNew, setShowNew] = React.useState(false);
-  const [newName, setNewName] = React.useState("");
-  const [newSlug, setNewSlug] = React.useState("");
-  const [newDesc, setNewDesc] = React.useState("");
 
+  // Form state with validation
+  const form = useFormState({
+    initialValues: {
+      name: "",
+      slug: "",
+      description: "",
+    },
+
+    validate: (values) => {
+      const errors: Record<string, string> = {};
+
+      // Validate name
+      if (!values.name.trim()) {
+        errors.name = "Project name is required";
+      } else if (values.name.length < 3) {
+        errors.name = "Minimum 3 characters";
+      } else if (values.name.length > 100) {
+        errors.name = "Maximum 100 characters";
+      }
+
+      // Validate slug
+      if (!values.slug.trim()) {
+        errors.slug = "Slug is required";
+      } else if (!/^[a-z0-9-]+$/.test(values.slug)) {
+        errors.slug = "Only lowercase letters, numbers, and dashes";
+      } else if (values.slug.startsWith("-") || values.slug.endsWith("-")) {
+        errors.slug = "Cannot start or end with a dash";
+      }
+
+      return errors;
+    },
+
+    onSubmit: async (values) => {
+      try {
+        await createProject.mutateAsync({
+          name: values.name,
+          slug: values.slug,
+          description: values.description || undefined,
+        });
+
+        success({
+          title: "Project created!",
+          description: `${values.name} is ready to use`,
+          action: {
+            label: "Open Project",
+            onClick: () => router.push(`/projects/${values.slug}`),
+          },
+        });
+
+        close();
+        form.resetForm();
+      } catch (err) {
+        showError({
+          title: "Failed to create project",
+          description: err instanceof Error ? err.message : "Unknown error",
+        });
+      }
+    },
+  });
+
+  // Handle name change and auto-generate slug
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const name = e.target.value;
+    form.setValue("name", name);
+
+    // Auto-generate slug from name
+    const slug = name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9-\s]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+
+    form.setValue("slug", slug);
+  };
+
+  // Show loading while checking org
   if (!activeOrgId) {
-    if (orgsLoading) return <DashboardSkeleton />;
+    if (orgsLoading) {
+      return <LoadingState message="Loading organization..." />;
+    }
     return <NoOrgState />;
   }
 
   const activeOrg = orgs?.find((o) => o.id === activeOrgId);
 
-  const handleCreate = async () => {
-    if (!newName || !newSlug) return;
-    await createProject.mutateAsync({ name: newName, slug: newSlug, description: newDesc || undefined });
-    setShowNew(false);
-    setNewName("");
-    setNewSlug("");
-    setNewDesc("");
-  };
+  // Show loading while fetching projects
+  if (isLoading) {
+    return <LoadingState message="Loading projects..." />;
+  }
+
+  // Show empty state if no projects
+  if (!projects?.length) {
+    return (
+      <Container size="xl">
+        <SystemEmptyState
+          icon={<div className="text-6xl">📦</div>}
+          title="No projects yet"
+          description="Create your first AI generation project to get started. Projects help organize templates, generations, and artifacts."
+          example="Example: Create a project named 'Marketing Content' for managing brand assets"
+          action={{
+            label: "Create Your First Project",
+            onClick: open,
+          }}
+        />
+
+        {/* Create Dialog */}
+        <Dialog open={isOpen} onOpenChange={close}>
+          <DialogContent title="Create New Project" closeButton>
+            <Form onSubmit={form.handleSubmit} disabled={form.isSubmitting}>
+              <Stack spacing="md">
+                <FormField
+                  label="Project Name"
+                  description="A descriptive name for your project"
+                  error={form.getError("name")}
+                  required
+                >
+                  <Input
+                    {...form.getFieldProps("name")}
+                    onChange={handleNameChange}
+                    placeholder="e.g., Marketing Content"
+                    autoFocus
+                  />
+                </FormField>
+
+                <FormField
+                  label="Project Slug"
+                  description="Used in URLs (auto-generated from project name)"
+                  error={form.getError("slug")}
+                  required
+                >
+                  <Input
+                    {...form.getFieldProps("slug")}
+                    placeholder="e.g., marketing-content"
+                  />
+                </FormField>
+
+                <FormField
+                  label="Description"
+                  description="What is this project about?"
+                >
+                  <Textarea
+                    {...form.getFieldProps("description")}
+                    placeholder="e.g., Managing social media, email, and website content"
+                    rows={3}
+                  />
+                </FormField>
+
+                <Flex gap="sm" justify="end" className="mt-4">
+                  <Button
+                    variant="secondary"
+                    onClick={close}
+                    type="button"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    loading={form.isSubmitting}
+                    disabled={!form.isValid}
+                  >
+                    Create Project
+                  </Button>
+                </Flex>
+              </Stack>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </Container>
+    );
+  }
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>
-            {activeOrg?.name ?? "Dashboard"}
-          </h1>
-          <p style={{ color: "var(--color-muted)", fontSize: 14, margin: "4px 0 0" }}>
-            {projects?.length ?? 0} project{projects?.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <Button onClick={() => setShowNew(true)}>+ New Project</Button>
-      </div>
-
-      {isLoading ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-          {[1, 2, 3].map((i) => (
-            <Card key={i} style={{ padding: 20 }}>
-              <Skeleton height={20} width="60%" />
-              <div style={{ marginTop: 8 }}><Skeleton height={14} /></div>
-              <div style={{ marginTop: 12 }}><Skeleton height={14} width="40%" /></div>
-            </Card>
-          ))}
-        </div>
-      ) : projects && projects.length > 0 ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-          {projects.map((p) => (
-            <Link
-              key={p.id}
-              href={`/projects/${p.id}`}
-              style={{ textDecoration: "none", color: "inherit" }}
-            >
-              <Card
-                style={{
-                  padding: 20,
-                  cursor: "pointer",
-                  transition: "border-color var(--motion-durationShort)",
-                }}
-              >
-                <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>{p.name}</h3>
-                {p.description && (
-                  <p style={{ color: "var(--color-muted)", fontSize: 13, margin: "6px 0 0", lineHeight: 1.4 }}>
-                    {p.description}
-                  </p>
-                )}
-                <div style={{ marginTop: 12, display: "flex", gap: 16, fontSize: 12, color: "var(--color-muted)" }}>
-                  <span>{p.generationCount ?? 0} generations</span>
-                  <span>{p.assetCount ?? 0} assets</span>
-                </div>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      ) : (
-        <EmptyState onNew={() => setShowNew(true)} />
-      )}
-
-      {/* New Project Modal */}
-      <Modal open={showNew} onClose={() => setShowNew(false)} title="New Project">
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, minWidth: 340 }}>
-          <label>
-            <span className="label">Name</span>
-            <input
-              className="input"
-              value={newName}
-              onChange={(e) => {
-                setNewName(e.target.value);
-                setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
-              }}
-              placeholder="My Project"
-            />
-          </label>
-          <label>
-            <span className="label">Slug</span>
-            <input className="input" value={newSlug} onChange={(e) => setNewSlug(e.target.value)} placeholder="my-project" />
-          </label>
-          <label>
-            <span className="label">Description (optional)</span>
-            <textarea
-              className="input"
-              value={newDesc}
-              onChange={(e) => setNewDesc(e.target.value)}
-              rows={2}
-              placeholder="What is this project about?"
-            />
-          </label>
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
-            <Button variant="ghost" onClick={() => setShowNew(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreate} loading={createProject.isPending} disabled={!newName || !newSlug}>
-              Create Project
-            </Button>
+    <Container size="xl">
+      <Stack spacing="lg">
+        {/* Header */}
+        <Flex direction="row" justify="between" align="center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {activeOrg?.name ?? "Dashboard"}
+            </h1>
+            <p className="text-gray-600 mt-2">
+              {projects.length} project{projects.length !== 1 ? "s" : ""} · Ready to generate
+            </p>
           </div>
-        </div>
-      </Modal>
-    </div>
+          <Button onClick={open} size="lg">
+            ✨ New Project
+          </Button>
+        </Flex>
+
+        {/* Projects Grid */}
+        <Grid columns={3} gap="lg" responsive>
+          {projects.map((project) => (
+            <ProjectCard key={project.id} project={project} />
+          ))}
+        </Grid>
+
+        {/* Create Dialog */}
+        <Dialog open={isOpen} onOpenChange={close}>
+          <DialogContent title="Create New Project" closeButton>
+            <Form onSubmit={form.handleSubmit} disabled={form.isSubmitting}>
+              <Stack spacing="md">
+                <FormField
+                  label="Project Name"
+                  description="A descriptive name for your project"
+                  error={form.getError("name")}
+                  required
+                >
+                  <Input
+                    {...form.getFieldProps("name")}
+                    onChange={handleNameChange}
+                    placeholder="e.g., Marketing Content"
+                    autoFocus
+                  />
+                </FormField>
+
+                <FormField
+                  label="Project Slug"
+                  description="Used in URLs (auto-generated from project name)"
+                  error={form.getError("slug")}
+                  required
+                >
+                  <Input
+                    {...form.getFieldProps("slug")}
+                    placeholder="e.g., marketing-content"
+                  />
+                </FormField>
+
+                <FormField
+                  label="Description"
+                  description="What is this project about?"
+                >
+                  <Textarea
+                    {...form.getFieldProps("description")}
+                    placeholder="e.g., Managing social media, email, and website content"
+                    rows={3}
+                  />
+                </FormField>
+
+                <Flex gap="sm" justify="end" className="mt-4">
+                  <Button
+                    variant="secondary"
+                    onClick={close}
+                    type="button"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    loading={form.isSubmitting}
+                    disabled={!form.isValid}
+                  >
+                    Create Project
+                  </Button>
+                </Flex>
+              </Stack>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </Stack>
+    </Container>
   );
 }
 
-function DashboardSkeleton() {
+interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  generationCount: number;
+  assetCount: number;
+}
+
+function ProjectCard({ project }: { project: Project }) {
+  const router = useRouter();
+
   return (
-    <div>
-      <Skeleton height={28} width={200} />
-      <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-        {[1, 2, 3].map((i) => (
-          <Card key={i} style={{ padding: 20 }}>
-            <Skeleton height={20} width="60%" />
-            <div style={{ marginTop: 8 }}><Skeleton height={14} /></div>
-          </Card>
-        ))}
+    <button
+      onClick={() => router.push(`/projects/${project.id}`)}
+      className="
+        border border-gray-200 rounded-lg p-6
+        hover:border-indigo-300 hover:shadow-md hover:bg-indigo-50/30
+        transition-all duration-200
+        text-left
+        focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
+        group
+      "
+    >
+      <h3 className="font-semibold text-lg text-gray-900 group-hover:text-indigo-700 transition-colors">
+        {project.name}
+      </h3>
+
+      {project.description && (
+        <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+          {project.description}
+        </p>
+      )}
+
+      <Flex gap="lg" className="text-xs text-gray-500 mt-4">
+        <span>⚡ {project.generationCount} generations</span>
+        <span>📦 {project.assetCount} artifacts</span>
+      </Flex>
+
+      <div className="mt-4 text-sm text-indigo-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+        Open Project →
       </div>
-    </div>
+    </button>
   );
 }
 
 function NoOrgState() {
   return (
-    <div style={{ textAlign: "center", marginTop: 80 }}>
-      <h2 style={{ fontSize: 20, fontWeight: 600 }}>Welcome to Aspire Studio</h2>
-      <p style={{ color: "var(--color-muted)", marginTop: 8 }}>
-        Create or join an organization to get started.
-      </p>
-      <div style={{ marginTop: 20 }}>
-        <Link href="/onboarding">
-          <Button>Get Started</Button>
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function EmptyState({ onNew }: { onNew: () => void }) {
-  return (
-    <div style={{ textAlign: "center", marginTop: 60, color: "var(--color-muted)" }}>
-      <p style={{ fontSize: 16 }}>No projects yet</p>
-      <p style={{ fontSize: 13, marginTop: 4 }}>Create your first project to start generating.</p>
-      <div style={{ marginTop: 16 }}>
-        <Button onClick={onNew}>+ New Project</Button>
-      </div>
-    </div>
+    <Container size="lg">
+      <SystemEmptyState
+        icon={<div className="text-6xl">🎯</div>}
+        title="Welcome to Aspire Studio"
+        description="Create or join an organization to start generating AI-powered content."
+        example="Organizations help you manage teams, projects, and billing"
+        action={{
+          label: "Get Started",
+          onClick: () => window.location.href = "/onboarding",
+        }}
+      />
+    </Container>
   );
 }

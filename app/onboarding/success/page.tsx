@@ -1,61 +1,101 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Container, Stack, Flex, Button } from "@/components/system";
 
 export default function OnboardingSuccessPage() {
   const router = useRouter();
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const successEmit = new CustomEvent("onboarding-complete");
+      window.dispatchEvent(successEmit);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#F9FAFB] text-on-surface">
-      <header className="fixed top-8 w-full flex justify-center pointer-events-none">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-50">
+      {/* Fixed Header */}
+      <div className="fixed top-0 left-0 right-0 p-6 flex justify-center pointer-events-none">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-500 flex items-center justify-center shadow-lg">
-            <span className="text-white font-bold text-lg select-none">A</span>
+            <span className="text-white font-bold text-lg">A</span>
           </div>
-          <span className="text-xl font-bold tracking-tight">Aspire Studio</span>
+          <span className="text-lg font-bold text-gray-900">Aspire Studio</span>
         </div>
-      </header>
+      </div>
 
-      <main className="w-full max-w-[640px] bg-white/70 backdrop-blur-md rounded-3xl p-12 flex flex-col items-center text-center shadow-xl">
-        <div className="flex gap-2 mb-6 mt-6">
-          <div className="w-2 h-2 rounded-full bg-neutral-200" />
-          <div className="w-2 h-2 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(70,72,212,0.4)]" />
+      {/* Main Content */}
+      <Container size="sm">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-12">
+          <Stack spacing="lg">
+            {/* Progress Indicator */}
+            <div className="flex gap-2 justify-center">
+              <div className="w-2 h-2 rounded-full bg-gray-300" />
+              <div className="w-2 h-2 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.4)]" />
+            </div>
+
+            {/* Success Icon */}
+            <div className="flex justify-center">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center">
+                <div className="text-5xl">🎉</div>
+              </div>
+            </div>
+
+            {/* Success Message */}
+            <div className="text-center space-y-3">
+              <h1 className="text-4xl font-bold text-gray-900">You're all set!</h1>
+              <p className="text-lg text-gray-600 max-w-md mx-auto leading-relaxed">
+                Your workspace is ready to go. Let's start creating something amazing.
+              </p>
+            </div>
+
+            {/* Feature Preview */}
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-8 border border-indigo-100 text-center">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-700">What you can do now:</p>
+                <ul className="flex flex-wrap gap-3 justify-center text-sm text-gray-600">
+                  <li>✨ Generate AI content</li>
+                  <li>📊 Manage projects</li>
+                  <li>🔑 Create API keys</li>
+                  <li>👥 Invite teammates</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <Stack spacing="md">
+              <Button
+                fullWidth
+                onClick={() => router.push("/dashboard")}
+                className="text-lg h-12"
+              >
+                Go to Dashboard →
+              </Button>
+
+              {/* Secondary Actions */}
+              <Flex gap="sm" justify="center">
+                <a href="#" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">
+                  Invite teammates
+                </a>
+                <span className="w-1 h-1 rounded-full bg-gray-300 self-center" />
+                <a href="#" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">
+                  View docs
+                </a>
+              </Flex>
+            </Stack>
+
+            {/* Footer Note */}
+            <div className="text-center pt-4 border-t border-gray-200">
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+                🔒 Your data is secure and encrypted
+              </p>
+            </div>
+          </Stack>
         </div>
-
-        <div className="w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-6">
-          <span className="material-symbols-outlined text-4xl">check_circle</span>
-        </div>
-
-        <div className="space-y-4 mb-8">
-          <h1 className="text-3xl font-extrabold">You're all set!</h1>
-          <p className="text-lg text-on-surface-variant max-w-md mx-auto leading-relaxed">
-            Your workspace <span className="font-semibold">Acme Studio</span> is ready. Let's build something.
-          </p>
-        </div>
-
-        <div className="w-full aspect-[21/9] rounded-2xl overflow-hidden mb-8 bg-surface-container-low relative">
-          <img className="w-full h-full object-cover opacity-60 mix-blend-multiply" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtmUrLTUUu2I07QSVXrLU0BMpfYs5PRjCv8Av0jII1RjmbPcGOivnqWqDOsBprYlaGcZnEbz5dU9vjksOD47v1zIiuVT9libEsCNQJldZumEHxs6W8_9qVw_Wvjaem2kjz5FjiJdF8tQGIvnh8MOf670J2qDWdH2Bk2T7SLKUgO9fb95-kvensA6wEbkcrhaogl9YrB0mAYyWB9iCIAU72OVrQMtWNw28-9Z_y-kdaLBZE6oOzenfyIZKM3oso_rWEi0kcS87FcYM" alt="" />
-          <div className="absolute inset-0 bg-gradient-to-t from-white/40 to-transparent" />
-        </div>
-
-        <div className="w-full space-y-4">
-          <button onClick={() => router.push('/dashboard')} className="w-full py-4 px-6 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-500 text-white font-semibold text-lg flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-lg">
-            Go to Dashboard
-            <span className="material-symbols-outlined">arrow_forward</span>
-          </button>
-
-          <div className="flex items-center justify-center gap-4 text-sm font-medium text-on-surface-variant">
-            <a className="hover:text-indigo-600" href="#">Invite teammates</a>
-            <span className="w-1 h-1 rounded-full bg-neutral-300" />
-            <a className="hover:text-indigo-600" href="#">Read the docs</a>
-          </div>
-        </div>
-      </main>
-
-      <footer className="mt-12 opacity-50">
-        <p className="text-xs text-neutral-400 font-medium tracking-widest uppercase">Secured by Aspire Intelligence</p>
-      </footer>
+      </Container>
     </div>
   );
 }

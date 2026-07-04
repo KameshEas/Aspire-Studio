@@ -4,255 +4,468 @@ import React, { useState } from "react";
 import { useParams } from "next/navigation";
 import { useActiveOrg } from "../../../../../lib/org-context";
 import { useGenerations, useGeneration } from "../../../../../lib/hooks";
+import { useToast } from "../../../../../lib/hooks/useToast";
 import type { GenerationSummary, Artifact } from "../../../../../lib/api";
-import Card from "../../../../../components/Card";
-import Button from "../../../../../components/Button";
-import Skeleton from "../../../../../components/Skeleton";
-import Modal from "../../../../../components/Modal";
+
+import {
+  Container,
+  Stack,
+  Flex,
+  Button,
+  Dialog,
+  DialogContent,
+  useDialog,
+  LoadingState,
+  EmptyState,
+  ErrorState,
+  StatusIndicator,
+  statusConfig,
+} from "../../../../../components/system";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3002";
-
-const STATUS_COLORS: Record<string, string> = {
-  completed: "#16a34a",
-  failed: "#dc2626",
-  pending: "#d97706",
-  running: "#2563eb",
-};
 
 export default function GenerationsPage() {
   const params = useParams<{ projectId: string }>();
   const { activeOrgId } = useActiveOrg();
+  const { isOpen, open, close } = useDialog();
   const orgId = activeOrgId ?? "";
   const projectId = params.projectId;
 
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const { data, isLoading } = useGenerations(orgId, projectId, { status: statusFilter || undefined });
+  const { data, isLoading, error: fetchError } = useGenerations(
+    orgId,
+    projectId,
+    { status: statusFilter || undefined }
+  );
+
+  // Handle opening detail modal
+  const handleOpenDetail = (generationId: string) => {
+    setSelectedId(generationId);
+    open();
+  };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <LoadingState message="Loading generations..." subtext="This might take a moment" />
+    );
+  }
+
+  // Show error state
+  if (fetchError) {
+    return (
+      <Container>
+        <ErrorState
+          title="Failed to load generations"
+          message={fetchError instanceof Error ? fetchError.message : "Unknown error"}
+          action={{
+            label: "Try Again",
+            onClick: () => window.location.reload(),
+          }}
+        />
+      </Container>
+    );
+  }
+
+  // Show empty state
+  if (!data?.items?.length) {
+    return (
+      <Container size="xl">
+        <EmptyState
+          icon={<div className="text-6xl">⚡</div>}
+          title="No generations yet"
+          description="Start by creating a template or using the generation studio to create your first AI-generated content."
+          example="Example: Use Studio to generate brand names, product descriptions, or marketing copy"
+          action={{
+            label: "Go to Studio",
+            onClick: () => (window.location.href = `/projects/${projectId}/studio`),
+          }}
+        />
+      </Container>
+    );
+  }
 
   return (
-    <div>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Generation History</h1>
-        <p style={{ color: "var(--color-muted)", fontSize: 14, margin: "4px 0 0" }}>
-          All AI generations run in this project.
-        </p>
-      </div>
-
-      {/* Status Filter */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        {["", "completed", "failed", "pending"].map((s) => (
-          <button
-            key={s}
-            onClick={() => setStatusFilter(s)}
-            style={{
-              padding: "6px 14px", borderRadius: 20, fontSize: 13, cursor: "pointer",
-              border: `1px solid ${statusFilter === s ? "var(--color-primary-600)" : "var(--color-border)"}`,
-              background: statusFilter === s ? "var(--color-primary-600)" : "transparent",
-              color: statusFilter === s ? "#fff" : "var(--color-text)",
-              fontWeight: statusFilter === s ? 600 : 400,
-              textTransform: "capitalize",
-            }}
-          >
-            {s === "" ? "All" : s}
-          </button>
-        ))}
-      </div>
-
-      {isLoading ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {[1, 2, 3].map((i) => <Card key={i} style={{ padding: 20 }}><Skeleton height={48} /></Card>)}
+    <Container size="xl">
+      <Stack spacing="lg">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Generation History</h1>
+          <p className="text-gray-600 mt-2">
+            {data.items.length} generation{data.items.length !== 1 ? "s" : ""} · Track all AI generations
+          </p>
         </div>
-      ) : !data?.items.length ? (
-        <Card style={{ padding: 40, textAlign: "center" }}>
-          <p style={{ color: "var(--color-muted)" }}>No generations yet.</p>
-        </Card>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {data.items.map((g) => (
-            <GenerationRow key={g.id} generation={g} onClick={() => setSelectedId(g.id)} />
+
+        {/* Status Filter */}
+        <div className="flex flex-wrap gap-2">
+          {[
+            { label: "All", value: "" },
+            { label: "Completed", value: "completed" },
+            { label: "Failed", value: "failed" },
+            { label: "Pending", value: "pending" },
+            { label: "Running", value: "running" },
+          ].map((filter) => (
+            <button
+              key={filter.value}
+              onClick={() => setStatusFilter(filter.value)}
+              className={`
+                px-4 py-2 rounded-full text-sm font-medium transition-all
+                ${
+                  statusFilter === filter.value
+                    ? "bg-indigo-600 text-white shadow-md"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }
+              `}
+            >
+              {filter.label}
+            </button>
           ))}
         </div>
-      )}
 
-      {/* Detail Drawer/Modal */}
-      {selectedId && (
-        <GenerationDetailModal
-          orgId={orgId}
-          projectId={projectId}
-          generationId={selectedId}
-          onClose={() => setSelectedId(null)}
-        />
-      )}
-    </div>
+        {/* Generations List */}
+        <div className="space-y-3">
+          {data.items.map((generation) => (
+            <GenerationCard
+              key={generation.id}
+              generation={generation}
+              onViewDetail={() => handleOpenDetail(generation.id)}
+            />
+          ))}
+        </div>
+
+        {/* Detail Modal */}
+        <Dialog open={isOpen} onOpenChange={close}>
+          {selectedId && (
+            <GenerationDetailModal
+              orgId={orgId}
+              projectId={projectId}
+              generationId={selectedId}
+            />
+          )}
+        </Dialog>
+      </Stack>
+    </Container>
   );
 }
 
-function GenerationRow({ generation, onClick }: { generation: GenerationSummary; onClick: () => void }) {
-  const statusColor = STATUS_COLORS[generation.status] ?? "var(--color-muted)";
+interface GenerationCardProps {
+  generation: GenerationSummary;
+  onViewDetail: () => void;
+}
+
+function GenerationCard({ generation, onViewDetail }: GenerationCardProps) {
   const duration =
     generation.startedAt && generation.finishedAt
-      ? ((new Date(generation.finishedAt).getTime() - new Date(generation.startedAt).getTime()) / 1000).toFixed(1) + "s"
+      ? ((new Date(generation.finishedAt).getTime() -
+          new Date(generation.startedAt).getTime()) /
+          1000).toFixed(1) + "s"
       : null;
 
+  const statusConfig_ = statusConfig[
+    generation.status as keyof typeof statusConfig
+  ];
+
   return (
-    <Card
-      style={{ padding: "14px 18px", cursor: "pointer" }}
-      onClick={onClick}
+    <button
+      onClick={onViewDetail}
+      className="
+        w-full text-left border border-gray-200 rounded-lg p-4
+        hover:border-indigo-300 hover:bg-indigo-50/30 hover:shadow-md
+        transition-all duration-200
+        focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
+        group
+      "
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span
-              style={{
-                width: 8, height: 8, borderRadius: "50%", background: statusColor,
-                display: "inline-block", flexShrink: 0,
-              }}
+      <div className="flex items-center justify-between">
+        <div className="flex-1 min-w-0">
+          {/* Status + Type */}
+          <div className="flex items-center gap-3 mb-2">
+            <div
+              className="w-3 h-3 rounded-full flex-shrink-0"
+              style={{ backgroundColor: statusConfig_?.color?.main }}
+              title={statusConfig_?.label}
             />
-            <span style={{ fontWeight: 600, fontSize: 14 }}>
-              {generation.jobType || "generation"}
-            </span>
-            <span style={{ fontSize: 12, color: "var(--color-muted)", textTransform: "capitalize" }}>
-              {generation.status}
+            <h3 className="font-semibold text-gray-900 group-hover:text-indigo-700 transition-colors">
+              {generation.jobType || "Generation"}
+            </h3>
+            <span
+              className="text-xs font-medium px-2 py-1 rounded-full"
+              style={{
+                backgroundColor: statusConfig_?.color?.light,
+                color: statusConfig_?.color?.dark,
+              }}
+            >
+              {statusConfig_?.label}
             </span>
           </div>
-          <div style={{ fontSize: 12, color: "var(--color-muted)", marginTop: 4, paddingLeft: 18 }}>
-            {new Date(generation.createdAt).toLocaleString()}
-            {duration && ` · ${duration}`}
-            {` · ${generation.artifactCount} artifact${generation.artifactCount !== 1 ? "s" : ""}`}
+
+          {/* Metadata */}
+          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600">
+            <span>📅 {new Date(generation.createdAt).toLocaleDateString()}</span>
+            <span>
+              🕐 {new Date(generation.createdAt).toLocaleTimeString()}
+            </span>
+            {duration && <span>⏱️ {duration}</span>}
+            <span>
+              📦 {generation.artifactCount} artifact
+              {generation.artifactCount !== 1 ? "s" : ""}
+            </span>
           </div>
+
+          {/* Error message if present */}
           {generation.error && (
-            <div style={{ fontSize: 12, color: "#dc2626", marginTop: 4, paddingLeft: 18 }}>
-              {generation.error}
+            <div className="mt-2 text-sm text-red-600 bg-red-50 px-2 py-1 rounded">
+              ⚠️ {generation.error}
             </div>
           )}
         </div>
-        <span style={{ fontSize: 18, color: "var(--color-muted)" }}>›</span>
+
+        {/* Arrow indicator */}
+        <span className="text-xl text-gray-400 ml-4 group-hover:text-indigo-600 transition-colors">
+          →
+        </span>
       </div>
-    </Card>
+    </button>
   );
+}
+
+interface GenerationDetailModalProps {
+  orgId: string;
+  projectId: string;
+  generationId: string;
 }
 
 function GenerationDetailModal({
   orgId,
   projectId,
   generationId,
-  onClose,
-}: {
-  orgId: string;
-  projectId: string;
-  generationId: string;
-  onClose: () => void;
-}) {
-  const { data, isLoading } = useGeneration(orgId, projectId, generationId);
+}: GenerationDetailModalProps) {
+  const { success } = useToast();
+  const { data, isLoading, error: detailError } = useGeneration(
+    orgId,
+    projectId,
+    generationId
+  );
+
+  if (isLoading) {
+    return (
+      <DialogContent title="Loading..." closeButton>
+        <LoadingState message="Loading generation details..." />
+      </DialogContent>
+    );
+  }
+
+  if (detailError || !data) {
+    return (
+      <DialogContent title="Error" closeButton>
+        <ErrorState
+          title="Failed to load generation"
+          message={
+            detailError instanceof Error
+              ? detailError.message
+              : "Unknown error occurred"
+          }
+        />
+      </DialogContent>
+    );
+  }
+
+  const statusCfg = statusConfig[data.status as keyof typeof statusConfig];
+  const duration =
+    data.startedAt && data.finishedAt
+      ? ((new Date(data.finishedAt).getTime() -
+          new Date(data.startedAt).getTime()) /
+          1000).toFixed(2) + "s"
+      : null;
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      success({
+        title: "Copied!",
+        description: `${label} copied to clipboard`,
+      });
+    } catch {
+      console.error("Failed to copy");
+    }
+  };
 
   return (
-    <Modal open onClose={onClose} title="Generation Detail">
-      {isLoading || !data ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <Skeleton height={20} width={200} />
-          <Skeleton height={120} />
-        </div>
-      ) : (
-        <div>
-          {/* Status + meta */}
-          <div style={{ display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
-            <MetaPill label="Status" value={data.status} color={STATUS_COLORS[data.status]} />
-            <MetaPill label="Job Type" value={data.jobType || "—"} />
-            {data.startedAt && data.finishedAt && (
-              <MetaPill
-                label="Duration"
-                value={
-                  ((new Date(data.finishedAt).getTime() - new Date(data.startedAt).getTime()) / 1000).toFixed(1) + "s"
-                }
+    <DialogContent title="Generation Details" closeButton>
+      <div className="space-y-6">
+        {/* Status & Metadata */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <p className="text-xs font-semibold text-gray-600 uppercase mb-1">
+              Status
+            </p>
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium"
+              style={{
+                backgroundColor: statusCfg?.color?.light,
+                color: statusCfg?.color?.dark,
+              }}
+            >
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: statusCfg?.color?.main }}
               />
-            )}
+              {statusCfg?.label}
+            </div>
           </div>
 
-          {/* Template info */}
-          {data.templateVersion && (
-            <div style={{ padding: 12, borderRadius: 6, border: "1px solid var(--color-border)", marginBottom: 16 }}>
-              <div style={{ fontSize: 12, color: "var(--color-muted)", marginBottom: 4 }}>Template</div>
-              <div style={{ fontWeight: 600, fontSize: 14 }}>{data.templateVersion.template.name}</div>
-              <div style={{ fontSize: 12, color: "var(--color-muted)" }}>Version {data.templateVersion.version}</div>
-            </div>
-          )}
+          <div>
+            <p className="text-xs font-semibold text-gray-600 uppercase mb-1">
+              Type
+            </p>
+            <p className="text-sm font-medium text-gray-900">
+              {data.jobType || "—"}
+            </p>
+          </div>
 
-          {/* Error */}
-          {data.error && (
-            <div style={{ padding: 12, borderRadius: 6, background: "#fef2f2", color: "#dc2626", fontSize: 13, marginBottom: 16 }}>
-              {data.error}
-            </div>
-          )}
-
-          {/* Artifacts */}
-          {data.artifacts.length > 0 && (
+          {duration && (
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
-                Artifacts ({data.artifacts.length})
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {data.artifacts.map((a) => (
-                  <ArtifactRow key={a.id} artifact={a} />
-                ))}
-              </div>
+              <p className="text-xs font-semibold text-gray-600 uppercase mb-1">
+                Duration
+              </p>
+              <p className="text-sm font-medium text-gray-900">{duration}</p>
             </div>
           )}
+
+          <div>
+            <p className="text-xs font-semibold text-gray-600 uppercase mb-1">
+              Created
+            </p>
+            <p className="text-sm font-medium text-gray-900">
+              {new Date(data.createdAt).toLocaleDateString()}
+            </p>
+          </div>
         </div>
-      )}
-    </Modal>
-  );
-}
 
-function MetaPill({ label, value, color }: { label: string; value: string; color?: string }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <span style={{ fontSize: 11, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
-      <span style={{ fontSize: 13, fontWeight: 600, color: color ?? "var(--color-text)" }}>{value}</span>
-    </div>
-  );
-}
+        {/* Template Info */}
+        {data.templateVersion && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">
+              Template Used
+            </h3>
+            <p className="text-lg font-bold text-indigo-600">
+              {data.templateVersion.template.name}
+            </p>
+            <p className="text-sm text-gray-600">
+              Version {data.templateVersion.version}
+            </p>
+          </div>
+        )}
 
-function ArtifactRow({ artifact }: { artifact: Artifact }) {
-  const isImage = artifact.type === "image";
-  return (
-    <div
-      style={{
-        display: "flex", alignItems: "center", gap: 12, padding: "10px 12px",
-        borderRadius: 6, border: "1px solid var(--color-border)",
-      }}
-    >
-      <div
-        style={{
-          width: 48, height: 48, borderRadius: 4, overflow: "hidden",
-          background: "var(--color-surface-alt, #f3f4f6)", flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}
-      >
-        {isImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={`${BACKEND_URL}${artifact.downloadUrl}`}
-            alt=""
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
-        ) : (
-          <span style={{ fontSize: 20 }}>📄</span>
+        {/* Error State */}
+        {data.error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-red-900 mb-1">
+              Error Details
+            </h3>
+            <p className="text-sm text-red-800">{data.error}</p>
+            <p className="text-xs text-red-700 mt-2">
+              Try adjusting your prompt or model settings and generate again.
+            </p>
+          </div>
+        )}
+
+        {/* Artifacts */}
+        {data.artifacts && data.artifacts.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-900">
+              Outputs ({data.artifacts.length})
+            </h3>
+            <div className="space-y-2">
+              {data.artifacts.map((artifact) => (
+                <ArtifactPreview key={artifact.id} artifact={artifact} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Empty Artifacts State */}
+        {(!data.artifacts || data.artifacts.length === 0) && !data.error && (
+          <div className="text-center py-8 bg-gray-50 rounded-lg">
+            <p className="text-gray-600">No artifacts generated yet</p>
+          </div>
         )}
       </div>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 600, fontSize: 13, textTransform: "capitalize" }}>{artifact.type}</div>
-        <div style={{ fontSize: 11, color: "var(--color-muted)" }}>
-          v{artifact.version} · {new Date(artifact.createdAt).toLocaleString()}
+    </DialogContent>
+  );
+}
+
+interface ArtifactPreviewProps {
+  artifact: Artifact;
+}
+
+function ArtifactPreview({ artifact }: ArtifactPreviewProps) {
+  const isImage = artifact.type === "image";
+
+  return (
+    <div className="border border-gray-200 rounded-lg p-3 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all">
+      <div className="flex items-start gap-3">
+        {/* Thumbnail */}
+        <div className="w-12 h-12 flex-shrink-0 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
+          {isImage ? (
+            <img
+              src={`${BACKEND_URL}${artifact.downloadUrl}`}
+              alt="artifact preview"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          ) : (
+            <span className="text-lg">📄</span>
+          )}
         </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <h4 className="text-sm font-semibold text-gray-900 capitalize">
+            {artifact.type}
+          </h4>
+          <p className="text-xs text-gray-600">
+            {new Date(artifact.createdAt).toLocaleString()}
+          </p>
+          {artifact.fileName && (
+            <p className="text-xs text-gray-500 truncate mt-1">
+              {artifact.fileName}
+            </p>
+          )}
+        </div>
+
+        {/* Actions */}
+        <Flex gap="sm" className="flex-shrink-0">
+          <Button
+            size="xs"
+            variant="secondary"
+            onClick={() => {
+              const downloadLink = document.createElement("a");
+              downloadLink.href = `${BACKEND_URL}${artifact.downloadUrl}`;
+              downloadLink.download = artifact.fileName || "artifact";
+              downloadLink.click();
+            }}
+            title="Download artifact"
+          >
+            📥
+          </Button>
+          <Button
+            size="xs"
+            variant="secondary"
+            onClick={() => {
+              const link = `${BACKEND_URL}${artifact.downloadUrl}`;
+              navigator.clipboard.writeText(link);
+            }}
+            title="Copy download link"
+          >
+            📋
+          </Button>
+        </Flex>
       </div>
-      <a
-        href={`${BACKEND_URL}${artifact.downloadUrl}`}
-        download
-        style={{ textDecoration: "none" }}
-      >
-        <Button variant="secondary" style={{ padding: "4px 10px", fontSize: 12 }}>Download</Button>
-      </a>
     </div>
   );
 }
