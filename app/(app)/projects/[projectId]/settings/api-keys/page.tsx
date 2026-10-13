@@ -126,7 +126,8 @@ export default function ApiKeysPage() {
               >
                 <Textarea
                   placeholder="e.g., Production integration, Backup job, etc."
-                  {...form.getFieldProps("description")}
+                  value={form.values.description}
+                  onChange={(e) => form.setValue("description", e.target.value)}
                 />
               </FormField>
 

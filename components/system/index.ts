@@ -1,24 +1,73 @@
 /**
  * Component System - Export all system components
+ * Premium design system with world-class components
  */
 
-// Design Tokens
-export * from "./tokens";
+// Design System
+export * from "../design-system";
 
-// Core Components
+// Design Tokens (legacy)
+export { sizing, radius, colorsDark, statusConfig } from "./tokens";
+export * as legacyTokens from "./tokens";
+
+// Core Components - Redesigned with Premium Design System
 export { Button, ButtonGroup, ToggleButton, type ButtonProps } from "./Button";
+
+// New Input System (replaces Form.Input)
+export {
+  Input,
+  Textarea,
+  PasswordInput,
+  type InputProps,
+  type TextareaProps,
+  type PasswordInputProps,
+} from "./Input";
+
+// Card System (new)
+export {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+  CardBadge,
+  type CardProps,
+  type CardHeaderProps,
+  type CardTitleProps,
+  type CardDescriptionProps,
+  type CardContentProps,
+  type CardFooterProps,
+  type CardBadgeProps,
+} from "./Card";
+
+// Badge & Status System (new)
+export {
+  Badge,
+  StatusBadge,
+  Tag,
+  type BadgeProps,
+  type StatusBadgeProps,
+  type TagProps,
+} from "./Badge";
+
+// Avatar System (new)
+export {
+  Avatar,
+  AvatarGroup,
+  type AvatarProps,
+  type AvatarGroupProps,
+} from "./Avatar";
+
+// Form (legacy - use new Input instead)
 export {
   Form,
   FormField,
-  Input,
-  Textarea,
   Select,
   Checkbox,
   RadioGroup,
   type FormProps,
   type FormFieldProps,
-  type InputProps,
-  type TextareaProps,
   type SelectProps,
   type CheckboxProps,
   type RadioGroupProps,

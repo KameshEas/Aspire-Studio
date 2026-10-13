@@ -103,13 +103,14 @@ export default function MembersPage() {
                   >
                     <Input
                       placeholder="user@example.com or user-id"
-                      {...form.getFieldProps("emailOrId")}
+                      value={form.values.emailOrId}
+                      onChange={(e) => form.setValue("emailOrId", e.target.value)}
                     />
                   </FormField>
                 </div>
                 <div className="w-40">
                   <FormField label="Role" required>
-                    <Select options={ROLES} {...form.getFieldProps("role")} />
+                    <Select options={ROLES} value={form.values.role} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => form.setValue("role", e.target.value)} />
                   </FormField>
                 </div>
                 <div className="flex items-end">

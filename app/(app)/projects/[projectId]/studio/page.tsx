@@ -9,12 +9,8 @@ import { useToast } from "../../../../../lib/hooks/useToast";
 import {
   Container,
   Stack,
-  Flex,
-  FormField,
-  Select,
   Textarea,
   Button,
-  RadioGroup,
   ProcessingState,
   ErrorState,
   LoadingState,
@@ -173,129 +169,153 @@ export default function StudioPage() {
   }
 
   return (
-    <Container size="lg">
-      <Stack spacing="lg">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Generate Studio</h1>
-          <p className="text-gray-600 mt-2">
-            Create AI-generated content using templates or custom prompts.
-          </p>
-        </div>
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div>
+        <h1 className="text-4xl font-bold text-var(--text) mb-2">Generation Studio</h1>
+        <p className="text-lg text-var(--text-secondary)">
+          Create AI-powered content with precision and speed
+        </p>
+      </div>
 
-        {/* Model Selection */}
-        <FormField
-          label="AI Model"
-          description="Choose which AI model to use for generation"
-          required
-        >
-          <Select
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-            options={
-              models?.map((m) => ({
-                label: `${m.name} - ${m.provider}`,
-                value: m.id,
-              })) ?? []
-            }
-          />
-        </FormField>
-
-        {/* Mode Selection */}
-        <FormField
-          label="Generation Mode"
-          description="Choose how to run this generation"
-        >
-          <RadioGroup
-            value={mode}
-            onChange={(v) => setMode(v as "sync" | "async")}
-            options={[
-              {
-                value: "sync",
-                label: "⚡ Generate Now",
-                description: "Wait for result immediately (~30 seconds). Perfect for testing and quick iterations.",
-              },
-              {
-                value: "async",
-                label: "⏱️ Queue & Continue",
-                description: "Process in background. Perfect for batch jobs. Check results later in History.",
-              },
-            ]}
-          />
-        </FormField>
-
-        {/* Prompt Input */}
-        <FormField
-          label="Prompt"
-          description='Describe what you want to generate. Use {{"{variable}"}} for dynamic parts.'
-          required
-        >
-          <Textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder={`Example: "Write a {{type}} for {{audience}}" or "Generate {{count}} ideas for {{topic}}"`}
-            rows={12}
-            maxLength={4000}
-            showCharCount
-          />
-        </FormField>
-
-        {/* Action Buttons */}
-        <Flex gap="md">
-          <Button
-            onClick={handleGenerate}
-            disabled={!prompt || !model}
-            loading={generate.isPending || generateAsync.isPending}
-            size="lg"
-          >
-            {mode === "sync" ? "⚡ Generate Now" : "⏱️ Queue"}
-          </Button>
-
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setPrompt("");
-            }}
-            size="lg"
-          >
-            Clear
-          </Button>
-        </Flex>
-
-        {/* Tips Section */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
-          <h3 className="font-semibold text-blue-900">💡 Tips for Better Results</h3>
-          <ul className="text-sm text-blue-800 space-y-1">
-            <li>✓ Use {{"{variable_name}"}} to make your prompt dynamic and reusable</li>
-            <li>✓ Be specific and clear about what you want generated</li>
-            <li>✓ Longer, detailed prompts usually produce better results</li>
-            <li>✓ Use "Generate Now" for testing, "Queue" for batch jobs</li>
-            <li>✓ Check History to see all your generations and their costs</li>
-          </ul>
-        </div>
-
-        {/* Model Info */}
-        {selectedModel && (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-900 mb-2">About {selectedModel.name}</h3>
-            <div className="text-sm text-gray-600 space-y-1">
-              <p>
-                <span className="font-medium">Provider:</span> {selectedModel.provider}
-              </p>
-              {selectedModel.costPer1kTokens && (
-                <p>
-                  <span className="font-medium">Cost:</span> ${selectedModel.costPer1kTokens}/1k tokens
-                </p>
-              )}
-              {selectedModel.maxTokens && (
-                <p>
-                  <span className="font-medium">Max tokens:</span> {selectedModel.maxTokens.toLocaleString()}
-                </p>
-              )}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Sidebar - Configuration */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Model Selection - Cards */}
+          <div>
+            <label className="block text-sm font-semibold text-var(--text) mb-3">AI Model</label>
+            <div className="space-y-2">
+              {models?.map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => setModel(m.id)}
+                  className={`
+                    w-full p-3 rounded-lg border-2 text-left transition-all
+                    ${
+                      model === m.id
+                        ? "border-var(--primary-600) bg-var(--primary-50) dark:bg-var(--primary-950)"
+                        : "border-var(--border) bg-var(--surface-1) hover:border-var(--border-strong)"
+                    }
+                  `}
+                >
+                  <div className="font-medium text-var(--text)">{m.name}</div>
+                  <div className="text-xs text-var(--text-secondary) mt-0.5">{m.provider}</div>
+                </button>
+              ))}
             </div>
           </div>
-        )}
-      </Stack>
-    </Container>
+
+          {/* Generation Mode - Toggle Cards */}
+          <div>
+            <label className="block text-sm font-semibold text-var(--text) mb-3">Mode</label>
+            <div className="space-y-2">
+              <button
+                onClick={() => setMode("sync")}
+                className={`
+                  w-full p-3 rounded-lg border-2 text-left transition-all
+                  ${
+                    mode === "sync"
+                      ? "border-var(--primary-600) bg-var(--primary-50) dark:bg-var(--primary-950)"
+                      : "border-var(--border) bg-var(--surface-1) hover:border-var(--border-strong)"
+                  }
+                `}
+              >
+                <div className="font-medium text-var(--text)">⚡ Generate Now</div>
+                <div className="text-xs text-var(--text-secondary) mt-0.5">Instant results (~30s)</div>
+              </button>
+
+              <button
+                onClick={() => setMode("async")}
+                className={`
+                  w-full p-3 rounded-lg border-2 text-left transition-all
+                  ${
+                    mode === "async"
+                      ? "border-var(--primary-600) bg-var(--primary-50) dark:bg-var(--primary-950)"
+                      : "border-var(--border) bg-var(--surface-1) hover:border-var(--border-strong)"
+                  }
+                `}
+              >
+                <div className="font-medium text-var(--text)">⏱️ Queue & Continue</div>
+                <div className="text-xs text-var(--text-secondary) mt-0.5">Background processing</div>
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Tips */}
+          <div className="bg-var(--primary-50) dark:bg-var(--primary-950) rounded-lg p-4 border border-var(--primary-200) dark:border-var(--primary-900)">
+            <h4 className="font-semibold text-var(--primary-900) dark:text-var(--primary-100) text-sm mb-2">💡 Pro Tips</h4>
+            <ul className="text-xs text-var(--primary-800) dark:text-var(--primary-200) space-y-1">
+              <li>• Use {`{{variable}}`} for dynamic content</li>
+              <li>• Be specific in descriptions</li>
+              <li>• Longer prompts = better results</li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Right Content - Prompt Editor */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Prompt Editor */}
+          <div>
+            <label className="block text-sm font-semibold text-var(--text) mb-2">Your Prompt</label>
+            <Textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder={`Example: "Write a brief {{content_type}} about {{topic}} for {{audience}}"\n\nUse {{variable}} syntax to create reusable prompts.`}
+              rows={12}
+              maxLength={4000}
+              showCharCount
+              state={generationError ? "error" : undefined}
+              helperText={
+                generationError
+                  ? `Error: ${generationError}`
+                  : "Describe what you want to generate"
+              }
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <Button
+              onClick={handleGenerate}
+              disabled={!prompt || !model}
+              loading={generate.isPending || generateAsync.isPending}
+              size="lg"
+              fullWidth
+            >
+              {mode === "sync" ? "⚡ Generate Now" : "⏱️ Queue & Continue"}
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => setPrompt("")}
+              size="lg"
+              disabled={!prompt}
+            >
+              Clear
+            </Button>
+          </div>
+
+          {/* Model Info Card */}
+          {selectedModel && (
+            <div className="p-4 rounded-lg bg-var(--surface-2) border border-var(--border)">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h4 className="font-semibold text-var(--text)">{selectedModel.name}</h4>
+                  <p className="text-sm text-var(--text-secondary) mt-1">
+                    Powered by {selectedModel.provider}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-var(--text-muted) mb-1">Generation Mode</div>
+                  <div className="text-sm font-semibold text-var(--primary-600)">
+                    {mode === "sync" ? "Synchronous" : "Asynchronous"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

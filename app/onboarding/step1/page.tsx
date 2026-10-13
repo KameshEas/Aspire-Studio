@@ -101,7 +101,8 @@ export default function OnboardingStep1Page() {
                 >
                   <Input
                     placeholder="e.g., Acme Design Studio"
-                    {...form.getFieldProps("orgName")}
+                    value={form.values.orgName}
+                    onChange={(e) => form.setValue("orgName", e.target.value)}
                   />
                 </FormField>
 
@@ -123,7 +124,8 @@ export default function OnboardingStep1Page() {
                       <Input
                         placeholder="workspace-url"
                         className="pl-32"
-                        {...form.getFieldProps("slug")}
+                        value={form.values.slug}
+                        onChange={(e) => form.setValue("slug", e.target.value)}
                       />
                     </div>
                   </FormField>

@@ -27,7 +27,7 @@ export function useArtifacts(
   return useQuery({
     queryKey: [ARTIFACTS_QUERY_KEY, orgId, projectId, options],
     queryFn: async () => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return artifacts.listArtifacts(orgId, projectId, options, token);
     },
     enabled: !!orgId && !!projectId,
@@ -44,7 +44,7 @@ export function useArtifact(
   return useQuery({
     queryKey: [ARTIFACTS_QUERY_KEY, orgId, projectId, artifactId],
     queryFn: async () => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return artifacts.getArtifact(orgId, projectId, artifactId, token);
     },
     enabled: !!orgId && !!projectId && !!artifactId,
@@ -61,7 +61,7 @@ export function useUpdateArtifact(
 
   return useMutation({
     mutationFn: async (data: UpdateArtifactRequest) => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return artifacts.updateArtifact(orgId, projectId, artifactId, data, token);
     },
     onSuccess: () => {
@@ -81,7 +81,7 @@ export function useDeleteArtifact(
 
   return useMutation({
     mutationFn: async () => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return artifacts.deleteArtifact(orgId, projectId, artifactId, token);
     },
     onSuccess: () => {
@@ -100,7 +100,7 @@ export function useDuplicateArtifact(
 
   return useMutation({
     mutationFn: async () => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return artifacts.duplicateArtifact(orgId, projectId, artifactId, token);
     },
     onSuccess: () => {

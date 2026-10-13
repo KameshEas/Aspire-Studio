@@ -46,7 +46,9 @@ export function useToast() {
   useEffect(() => {
     const listener = (newToasts: Toast[]) => setToasts(newToasts);
     listeners.add(listener);
-    return () => listeners.delete(listener);
+    return () => {
+      listeners.delete(listener);
+    };
   }, []);
 
   const toast = useCallback(

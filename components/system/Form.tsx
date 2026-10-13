@@ -376,7 +376,7 @@ export interface RadioOption {
 }
 
 export interface RadioGroupProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {
   value?: string;
   onChange?: (value: string) => void;
   options: RadioOption[];

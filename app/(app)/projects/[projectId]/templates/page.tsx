@@ -148,7 +148,8 @@ export default function TemplatesPage() {
                   required
                 >
                   <Input
-                    {...createForm.getFieldProps("name")}
+                    value={createForm.values.name}
+                    onChange={(e) => createForm.setValue("name", e.target.value)}
                     placeholder="e.g., Product Description"
                     autoFocus
                   />
@@ -159,7 +160,8 @@ export default function TemplatesPage() {
                   description="What is this template for?"
                 >
                   <Input
-                    {...createForm.getFieldProps("description")}
+                    value={createForm.values.description}
+                    onChange={(e) => createForm.setValue("description", e.target.value)}
                     placeholder="e.g., E-commerce product pages"
                   />
                 </FormField>
@@ -171,7 +173,8 @@ export default function TemplatesPage() {
                   required
                 >
                   <Textarea
-                    {...createForm.getFieldProps("prompt")}
+                    value={createForm.values.prompt}
+                    onChange={(e) => createForm.setValue("prompt", e.target.value)}
                     placeholder={`Example: "Write a compelling product description for {{product_name}} that appeals to {{target_audience}}."`}
                     rows={6}
                     maxLength={2000}
@@ -246,7 +249,8 @@ export default function TemplatesPage() {
                   required
                 >
                   <Input
-                    {...createForm.getFieldProps("name")}
+                    value={createForm.values.name}
+                    onChange={(e) => createForm.setValue("name", e.target.value)}
                     placeholder="e.g., Product Description"
                     autoFocus
                   />
@@ -257,7 +261,8 @@ export default function TemplatesPage() {
                   description="What is this template for?"
                 >
                   <Input
-                    {...createForm.getFieldProps("description")}
+                    value={createForm.values.description}
+                    onChange={(e) => createForm.setValue("description", e.target.value)}
                     placeholder="e.g., E-commerce product pages"
                   />
                 </FormField>
@@ -269,7 +274,8 @@ export default function TemplatesPage() {
                   required
                 >
                   <Textarea
-                    {...createForm.getFieldProps("prompt")}
+                    value={createForm.values.prompt}
+                    onChange={(e) => createForm.setValue("prompt", e.target.value)}
                     placeholder={`Example: "Write a compelling product description for {{product_name}} that appeals to {{target_audience}}."`}
                     rows={6}
                     maxLength={2000}
@@ -333,10 +339,10 @@ export default function TemplatesPage() {
 interface Template {
   id: string;
   name: string;
-  description?: string;
-  versionCount: number;
+  description?: string | null;
+  versionCount?: number;
   updatedAt: string;
-  createdBy?: { name?: string; email: string };
+  createdBy?: { id?: string; name?: string | null; email: string } | null;
 }
 
 interface TemplateCardProps {

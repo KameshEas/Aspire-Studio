@@ -31,22 +31,32 @@ export async function apiFetch<T = unknown>(
     : {};
 
   try {
+    const finalHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      finalHeaders.Authorization = `Bearer ${token}`;
+    }
+
+    if (headers && typeof headers === 'object' && !Array.isArray(headers)) {
+      Object.assign(finalHeaders, headers);
+    }
+
     const response = await fetch(fullUrl, {
       ...fetchOptions,
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeaders,
-        ...headers,
-      },
+      headers: finalHeaders,
     });
 
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
       return {
-        error: data?.error || `HTTP ${response.status}`,
-        details: data?.details,
-        retryAfter: data?.retryAfter,
+        error: {
+          error: data?.error || `HTTP ${response.status}`,
+          details: data?.details,
+          retryAfter: data?.retryAfter,
+        },
         status: response.status,
       };
     }
@@ -57,7 +67,9 @@ export async function apiFetch<T = unknown>(
     };
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : 'Network error',
+      error: {
+        error: error instanceof Error ? error.message : 'Network error',
+      },
       status: 0,
     };
   }

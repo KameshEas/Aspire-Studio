@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useProjects, useCreateProject } from "../../../lib/hooks";
 import { useOrgs } from "../../../lib/hooks";
@@ -24,6 +23,11 @@ import {
   useDialog,
   LoadingState,
   EmptyState as SystemEmptyState,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Badge,
 } from "../../../components/system";
 
 export default function DashboardPage() {
@@ -36,7 +40,6 @@ export default function DashboardPage() {
   const { data: projects, isLoading } = useProjects(activeOrgId ?? "");
   const createProject = useCreateProject(activeOrgId ?? "");
 
-  // Form state with validation
   const form = useFormState({
     initialValues: {
       name: "",
@@ -47,7 +50,6 @@ export default function DashboardPage() {
     validate: (values) => {
       const errors: Record<string, string> = {};
 
-      // Validate name
       if (!values.name.trim()) {
         errors.name = "Project name is required";
       } else if (values.name.length < 3) {
@@ -56,7 +58,6 @@ export default function DashboardPage() {
         errors.name = "Maximum 100 characters";
       }
 
-      // Validate slug
       if (!values.slug.trim()) {
         errors.slug = "Slug is required";
       } else if (!/^[a-z0-9-]+$/.test(values.slug)) {
@@ -96,12 +97,10 @@ export default function DashboardPage() {
     },
   });
 
-  // Handle name change and auto-generate slug
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.value;
     form.setValue("name", name);
 
-    // Auto-generate slug from name
     const slug = name
       .toLowerCase()
       .trim()
@@ -113,7 +112,6 @@ export default function DashboardPage() {
     form.setValue("slug", slug);
   };
 
-  // Show loading while checking org
   if (!activeOrgId) {
     if (orgsLoading) {
       return <LoadingState message="Loading organization..." />;
@@ -123,74 +121,60 @@ export default function DashboardPage() {
 
   const activeOrg = orgs?.find((o) => o.id === activeOrgId);
 
-  // Show loading while fetching projects
   if (isLoading) {
     return <LoadingState message="Loading projects..." />;
   }
 
-  // Show empty state if no projects
   if (!projects?.length) {
     return (
-      <Container size="xl">
-        <SystemEmptyState
-          icon={<div className="text-6xl">📦</div>}
-          title="No projects yet"
-          description="Create your first AI generation project to get started. Projects help organize templates, generations, and artifacts."
-          example="Example: Create a project named 'Marketing Content' for managing brand assets"
-          action={{
-            label: "Create Your First Project",
-            onClick: open,
-          }}
-        />
+      <div className="flex flex-col items-center justify-center min-h-[600px] px-4">
+        {/* Empty State */}
+        <div className="text-center max-w-md">
+          <div className="text-6xl mb-6">🚀</div>
+          <h2 className="text-3xl font-bold text-var(--text) mb-3">No projects yet</h2>
+          <p className="text-var(--text-secondary) mb-8 text-lg">
+            Create your first AI generation project to start building intelligent features instantly.
+          </p>
+          <Button onClick={open} size="lg" fullWidth>
+            Create Your First Project
+          </Button>
+        </div>
 
-        {/* Create Dialog */}
+        {/* Dialog */}
         <Dialog open={isOpen} onOpenChange={close}>
           <DialogContent title="Create New Project" closeButton>
             <Form onSubmit={form.handleSubmit} disabled={form.isSubmitting}>
               <Stack spacing="md">
-                <FormField
-                  label="Project Name"
-                  description="A descriptive name for your project"
-                  error={form.getError("name")}
-                  required
-                >
+                <FormField label="Project Name" required>
                   <Input
-                    {...form.getFieldProps("name")}
+                    value={form.values.name}
                     onChange={handleNameChange}
                     placeholder="e.g., Marketing Content"
                     autoFocus
+                    error={form.getError("name")}
                   />
                 </FormField>
 
-                <FormField
-                  label="Project Slug"
-                  description="Used in URLs (auto-generated from project name)"
-                  error={form.getError("slug")}
-                  required
-                >
+                <FormField label="Project Slug" required>
                   <Input
-                    {...form.getFieldProps("slug")}
+                    value={form.values.slug}
+                    onChange={(e) => form.setValue("slug", e.target.value)}
                     placeholder="e.g., marketing-content"
+                    error={form.getError("slug")}
                   />
                 </FormField>
 
-                <FormField
-                  label="Description"
-                  description="What is this project about?"
-                >
+                <FormField label="Description">
                   <Textarea
-                    {...form.getFieldProps("description")}
-                    placeholder="e.g., Managing social media, email, and website content"
+                    value={form.values.description}
+                    onChange={(e) => form.setValue("description", e.target.value)}
+                    placeholder="What is this project about?"
                     rows={3}
                   />
                 </FormField>
 
-                <Flex gap="sm" justify="end" className="mt-4">
-                  <Button
-                    variant="secondary"
-                    onClick={close}
-                    type="button"
-                  >
+                <Flex gap="md" justify="end" className="mt-6">
+                  <Button variant="outline" onClick={close} type="button">
                     Cancel
                   </Button>
                   <Button
@@ -205,144 +189,171 @@ export default function DashboardPage() {
             </Form>
           </DialogContent>
         </Dialog>
-      </Container>
+      </div>
     );
   }
 
+  const totalGenerations = projects.reduce((sum, p) => sum + (p.generationCount || 0), 0);
+
   return (
-    <Container size="xl">
-      <Stack spacing="lg">
-        {/* Header */}
-        <Flex direction="row" justify="between" align="center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              {activeOrg?.name ?? "Dashboard"}
-            </h1>
-            <p className="text-gray-600 mt-2">
-              {projects.length} project{projects.length !== 1 ? "s" : ""} · Ready to generate
-            </p>
-          </div>
-          <Button onClick={open} size="lg">
-            ✨ New Project
-          </Button>
-        </Flex>
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div className="flex flex-col gap-6">
+        {/* Title */}
+        <div>
+          <h1 className="text-4xl font-bold text-var(--text) mb-2">{activeOrg?.name ?? "Dashboard"}</h1>
+          <p className="text-var(--text-secondary)">
+            Manage your AI generation projects and templates
+          </p>
+        </div>
 
-        {/* Projects Grid */}
-        <Grid columns={3} gap="lg" responsive>
-          {projects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
-        </Grid>
+        {/* Stats Bar */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card variant="elevated" padding="md">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-var(--text-secondary)">Total Projects</p>
+                <p className="text-2xl font-bold text-var(--text) mt-1">{projects.length}</p>
+              </div>
+              <div className="text-4xl opacity-20">📦</div>
+            </div>
+          </Card>
 
-        {/* Create Dialog */}
-        <Dialog open={isOpen} onOpenChange={close}>
-          <DialogContent title="Create New Project" closeButton>
-            <Form onSubmit={form.handleSubmit} disabled={form.isSubmitting}>
-              <Stack spacing="md">
-                <FormField
-                  label="Project Name"
-                  description="A descriptive name for your project"
+          <Card variant="elevated" padding="md">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-var(--text-secondary)">Generations</p>
+                <p className="text-2xl font-bold text-var(--text) mt-1">{totalGenerations}</p>
+              </div>
+              <div className="text-4xl opacity-20">⚡</div>
+            </div>
+          </Card>
+
+          <Card variant="elevated" padding="md">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-var(--text-secondary)">Quick Action</p>
+                <Button onClick={open} size="sm" className="mt-2">
+                  + New Project
+                </Button>
+              </div>
+              <div className="text-4xl opacity-20">🎯</div>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      {/* Projects Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {projects.map((project) => (
+          <ProjectCard key={project.id} project={project} />
+        ))}
+      </div>
+
+      {/* Create Dialog */}
+      <Dialog open={isOpen} onOpenChange={close}>
+        <DialogContent title="Create New Project" closeButton>
+          <Form onSubmit={form.handleSubmit} disabled={form.isSubmitting}>
+            <Stack spacing="md">
+              <FormField label="Project Name" required>
+                <Input
+                  value={form.values.name}
+                  onChange={handleNameChange}
+                  placeholder="e.g., Marketing Content"
+                  autoFocus
                   error={form.getError("name")}
-                  required
-                >
-                  <Input
-                    {...form.getFieldProps("name")}
-                    onChange={handleNameChange}
-                    placeholder="e.g., Marketing Content"
-                    autoFocus
-                  />
-                </FormField>
+                />
+              </FormField>
 
-                <FormField
-                  label="Project Slug"
-                  description="Used in URLs (auto-generated from project name)"
+              <FormField label="Project Slug" required>
+                <Input
+                  value={form.values.slug}
+                  onChange={(e) => form.setValue("slug", e.target.value)}
+                  placeholder="e.g., marketing-content"
                   error={form.getError("slug")}
-                  required
-                >
-                  <Input
-                    {...form.getFieldProps("slug")}
-                    placeholder="e.g., marketing-content"
-                  />
-                </FormField>
+                />
+              </FormField>
 
-                <FormField
-                  label="Description"
-                  description="What is this project about?"
-                >
-                  <Textarea
-                    {...form.getFieldProps("description")}
-                    placeholder="e.g., Managing social media, email, and website content"
-                    rows={3}
-                  />
-                </FormField>
+              <FormField label="Description">
+                <Textarea
+                  value={form.values.description}
+                  onChange={(e) => form.setValue("description", e.target.value)}
+                  placeholder="What is this project about?"
+                  rows={3}
+                />
+              </FormField>
 
-                <Flex gap="sm" justify="end" className="mt-4">
-                  <Button
-                    variant="secondary"
-                    onClick={close}
-                    type="button"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    loading={form.isSubmitting}
-                    disabled={!form.isValid}
-                  >
-                    Create Project
-                  </Button>
-                </Flex>
-              </Stack>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </Stack>
-    </Container>
+              <Flex gap="md" justify="end" className="mt-6">
+                <Button variant="outline" onClick={close} type="button">
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  loading={form.isSubmitting}
+                  disabled={!form.isValid}
+                >
+                  Create Project
+                </Button>
+              </Flex>
+            </Stack>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
 
 interface Project {
   id: string;
   name: string;
-  description?: string;
-  generationCount: number;
-  assetCount: number;
+  description?: string | null;
+  generationCount?: number;
+  assetCount?: number;
 }
 
 function ProjectCard({ project }: { project: Project }) {
   const router = useRouter();
 
   return (
-    <button
+    <Card
+      variant="elevated"
+      padding="lg"
+      clickable
       onClick={() => router.push(`/projects/${project.id}`)}
-      className="
-        border border-gray-200 rounded-lg p-6
-        hover:border-indigo-300 hover:shadow-md hover:bg-indigo-50/30
-        transition-all duration-200
-        text-left
-        focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
-        group
-      "
+      className="group h-full flex flex-col"
     >
-      <h3 className="font-semibold text-lg text-gray-900 group-hover:text-indigo-700 transition-colors">
-        {project.name}
-      </h3>
+      {/* Header */}
+      <div className="mb-4">
+        <h3 className="text-lg font-bold text-var(--text) group-hover:text-var(--primary-600) transition-colors line-clamp-2">
+          {project.name}
+        </h3>
+      </div>
 
+      {/* Description */}
       {project.description && (
-        <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+        <p className="text-sm text-var(--text-secondary) mb-4 line-clamp-2 flex-grow">
           {project.description}
         </p>
       )}
 
-      <Flex gap="lg" className="text-xs text-gray-500 mt-4">
-        <span>⚡ {project.generationCount} generations</span>
-        <span>📦 {project.assetCount} artifacts</span>
-      </Flex>
-
-      <div className="mt-4 text-sm text-indigo-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-        Open Project →
+      {/* Stats */}
+      <div className="flex flex-wrap gap-2 mb-6 pt-4 border-t border-var(--border)">
+        <Badge variant="primary" size="sm">
+          <span>⚡</span>
+          <span>{project.generationCount} {project.generationCount === 1 ? "Generation" : "Generations"}</span>
+        </Badge>
+        <Badge variant="default" size="sm">
+          <span>📦</span>
+          <span>{project.assetCount} {project.assetCount === 1 ? "Artifact" : "Artifacts"}</span>
+        </Badge>
       </div>
-    </button>
+
+      {/* CTA */}
+      <div className="flex items-center text-sm font-medium text-var(--primary-600) opacity-0 group-hover:opacity-100 transition-opacity">
+        <span>Open Project</span>
+        <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
+      </div>
+    </Card>
   );
 }
 
@@ -356,7 +367,7 @@ function NoOrgState() {
         example="Organizations help you manage teams, projects, and billing"
         action={{
           label: "Get Started",
-          onClick: () => window.location.href = "/onboarding",
+          onClick: () => (window.location.href = "/onboarding"),
         }}
       />
     </Container>

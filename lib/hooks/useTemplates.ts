@@ -21,7 +21,7 @@ export function useTemplates(
   return useQuery({
     queryKey: [TEMPLATES_QUERY_KEY, orgId, projectId, options],
     queryFn: async () => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return templates.listTemplates(orgId, projectId, options, token);
     },
     enabled: !!orgId && !!projectId,
@@ -34,7 +34,7 @@ export function useTemplate(templateId: string) {
   return useQuery({
     queryKey: [TEMPLATES_QUERY_KEY, templateId],
     queryFn: async () => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return templates.getTemplate(templateId, token);
     },
     enabled: !!templateId,
@@ -47,7 +47,7 @@ export function useCreateTemplate(orgId: string, projectId: string) {
 
   return useMutation({
     mutationFn: async (data: Parameters<typeof templates.createTemplate>[2]) => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return templates.createTemplate(orgId, projectId, data, token);
     },
     onSuccess: () => {
@@ -62,7 +62,7 @@ export function useUpdateTemplate(templateId: string) {
 
   return useMutation({
     mutationFn: async (data: Parameters<typeof templates.updateTemplate>[1]) => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return templates.updateTemplate(templateId, data, token);
     },
     onSuccess: () => {
@@ -77,7 +77,7 @@ export function useDeleteTemplate(templateId: string) {
 
   return useMutation({
     mutationFn: async () => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return templates.deleteTemplate(templateId, token);
     },
     onSuccess: () => {
@@ -91,7 +91,7 @@ export function useTestTemplate(templateId: string) {
 
   return useMutation({
     mutationFn: async (variables: Record<string, unknown>) => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return templates.testTemplate(templateId, variables, token);
     },
   });
@@ -105,7 +105,7 @@ export function useVersions(templateId: string) {
   return useQuery({
     queryKey: [TEMPLATES_QUERY_KEY, templateId, 'versions'],
     queryFn: async () => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return templates.listVersions(templateId, token);
     },
     enabled: !!templateId,
@@ -118,7 +118,7 @@ export function useCreateVersion(templateId: string) {
 
   return useMutation({
     mutationFn: async (data: Parameters<typeof templates.createVersion>[1]) => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return templates.createVersion(templateId, data, token);
     },
     onSuccess: () => {
@@ -134,7 +134,7 @@ export function useUpdateVersion(templateId: string, versionId: string) {
 
   return useMutation({
     mutationFn: async (data: Parameters<typeof templates.updateVersion>[2]) => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return templates.updateVersion(templateId, versionId, data, token);
     },
     onSuccess: () => {
@@ -149,7 +149,7 @@ export function useDeleteVersion(templateId: string, versionId: string) {
 
   return useMutation({
     mutationFn: async () => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return templates.deleteVersion(templateId, versionId, token);
     },
     onSuccess: () => {
@@ -164,7 +164,7 @@ export function useActivateVersion(templateId: string, versionId: string) {
 
   return useMutation({
     mutationFn: async () => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return templates.activateVersion(templateId, versionId, token);
     },
     onSuccess: () => {

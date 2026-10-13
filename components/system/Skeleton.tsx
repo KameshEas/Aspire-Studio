@@ -11,6 +11,7 @@ export interface SkeletonProps {
   height?: string | number;
   circle?: boolean;
   animated?: boolean;
+  style?: React.CSSProperties;
 }
 
 export const Skeleton: React.FC<SkeletonProps> = ({
@@ -19,6 +20,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   height,
   circle = false,
   animated = true,
+  style,
 }) => {
   const widthStyle = typeof width === "number" ? `${width}px` : width;
   const heightStyle = typeof height === "number" ? `${height}px` : height;
@@ -34,6 +36,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
       style={{
         width: widthStyle || "100%",
         height: heightStyle || "1rem",
+        ...style,
       }}
       role="status"
       aria-label="Loading"

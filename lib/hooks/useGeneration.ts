@@ -26,7 +26,7 @@ export function useGenerations(
   return useQuery({
     queryKey: [GENERATIONS_QUERY_KEY, orgId, projectId, options],
     queryFn: async () => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return generations.listGenerations(orgId, projectId, options, token);
     },
     enabled: !!orgId && !!projectId,
@@ -43,7 +43,7 @@ export function useGeneration(
   return useQuery({
     queryKey: [GENERATIONS_QUERY_KEY, orgId, projectId, generationId],
     queryFn: async () => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return generations.getGeneration(orgId, projectId, generationId, token);
     },
     enabled: !!orgId && !!projectId && !!generationId,
@@ -56,7 +56,7 @@ export function useGenerate(orgId: string, projectId: string) {
 
   return useMutation({
     mutationFn: async (data: GenerateRequest) => {
-      const token = await getToken();
+      const token = (await getToken()) ?? undefined;
       return generations.generate(orgId, projectId, data, token);
     },
     onSuccess: () => {

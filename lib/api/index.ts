@@ -4,5 +4,5 @@
 
 export * from './client';
 export * from './templates';
-export * from './generations';
+export type { Artifact as GenerationArtifact } from './generations';
 export * from './artifacts';

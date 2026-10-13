@@ -1,60 +1,86 @@
 /**
- * Button Component - Production-ready with accessibility and all states
+ * Button Component - World-Class Premium SaaS Design
+ * Variants: primary, secondary, outline, ghost, danger, success
+ * Sizes: xs, sm, md, lg, xl
+ * All states: default, hover, active, disabled, loading, focus
  */
 
 import React, { forwardRef } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { colors, spacing, radius, motion, sizing } from "./tokens";
 
-// ─── Variants ──────────────────────────────────────────────
+// ─── Refined Button Variants ───────────────────────────────
 
 const buttonVariants = cva(
-  // Base styles
+  // Base styles - applying design system tokens
   `
     inline-flex items-center justify-center gap-2 font-medium
-    transition-all duration-150 ease-out
-    disabled:opacity-50 disabled:cursor-not-allowed
-    focus:outline-none focus:ring-2 focus:ring-offset-2
-    dark:focus:ring-offset-gray-900
-    active:scale-95 hover:scale-105
+    whitespace-nowrap rounded-md
+    transition-all duration-[var(--duration-base)] ease-[var(--easing-standard)]
+    disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-var(--primary-500) focus-visible:ring-offset-2
+    dark:focus-visible:ring-var(--primary-400) dark:focus-visible:ring-offset-var(--bg)
+    relative group
   `,
   {
     variants: {
       variant: {
+        // Primary - Bold, high emphasis
         primary: `
-          bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800
-          focus:ring-indigo-500 disabled:bg-indigo-400
-          dark:bg-indigo-500 dark:hover:bg-indigo-600 dark:active:bg-indigo-700
+          bg-var(--primary-600) text-white
+          hover:bg-var(--primary-700) hover:shadow-[var(--shadow-md)]
+          active:bg-var(--primary-800) active:shadow-[var(--shadow-base)]
+          dark:bg-var(--primary-600) dark:hover:bg-var(--primary-500) dark:active:bg-var(--primary-700)
         `,
+
+        // Secondary - Medium emphasis with background
         secondary: `
-          bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400
-          focus:ring-gray-500 disabled:bg-gray-100
-          dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600
-          dark:active:bg-gray-500 dark:disabled:bg-gray-800
+          bg-var(--slate-100) text-var(--slate-900)
+          hover:bg-var(--slate-200) hover:shadow-[var(--shadow-sm)]
+          active:bg-var(--slate-300)
+          dark:bg-var(--slate-800) dark:text-var(--slate-50)
+          dark:hover:bg-var(--slate-700) dark:active:bg-var(--slate-600)
         `,
+
+        // Outline - Bordered, lower emphasis
+        outline: `
+          border-2 border-var(--border) bg-transparent text-var(--text)
+          hover:border-var(--primary-600) hover:text-var(--primary-600) hover:bg-var(--primary-50)
+          active:border-var(--primary-700) active:bg-var(--primary-100)
+          dark:hover:bg-var(--primary-950) dark:active:bg-var(--primary-900)
+        `,
+
+        // Ghost - Minimal, text only
         ghost: `
-          bg-transparent text-indigo-600 hover:bg-indigo-50 active:bg-indigo-100
-          focus:ring-indigo-500 disabled:text-gray-400
-          dark:text-indigo-400 dark:hover:bg-indigo-950 dark:active:bg-indigo-900
+          bg-transparent text-var(--primary-600)
+          hover:bg-var(--primary-50) hover:text-var(--primary-700)
+          active:bg-var(--primary-100)
+          dark:text-var(--primary-400) dark:hover:bg-var(--primary-950)
+          dark:active:bg-var(--primary-900)
         `,
+
+        // Danger - For destructive actions
         danger: `
-          bg-red-600 text-white hover:bg-red-700 active:bg-red-800
-          focus:ring-red-500 disabled:bg-red-400
-          dark:bg-red-500 dark:hover:bg-red-600 dark:active:bg-red-700
+          bg-var(--danger) text-white
+          hover:bg-[#dc2626] hover:shadow-[var(--shadow-md)]
+          active:bg-[#b91c1c]
+          dark:bg-var(--danger) dark:hover:bg-[#f87171] dark:active:bg-[#dc2626]
         `,
+
+        // Success - For positive actions
         success: `
-          bg-green-600 text-white hover:bg-green-700 active:bg-green-800
-          focus:ring-green-500 disabled:bg-green-400
-          dark:bg-green-500 dark:hover:bg-green-600 dark:active:bg-green-700
+          bg-var(--success) text-white
+          hover:bg-[#16a34a] hover:shadow-[var(--shadow-md)]
+          active:bg-[#15803d]
+          dark:bg-var(--success) dark:hover:bg-[#4ade80] dark:active:bg-[#16a34a]
         `,
       },
 
       size: {
-        xs: "px-2 py-1 text-xs h-6 rounded-md",
-        sm: "px-3 py-1.5 text-sm h-8 rounded-md",
-        md: "px-4 py-2 text-sm h-10 rounded-lg",
-        lg: "px-6 py-3 text-base h-12 rounded-lg",
-        xl: "px-8 py-4 text-lg h-14 rounded-lg",
+        xs: "h-6 px-2 text-xs gap-1",
+        sm: "h-8 px-3 text-sm gap-1.5",
+        md: "h-10 px-4 text-sm gap-2",
+        lg: "h-12 px-6 text-base gap-2",
+        xl: "h-14 px-8 text-base gap-3",
       },
 
       fullWidth: {
@@ -77,12 +103,11 @@ const buttonVariants = cva(
   }
 );
 
-// ─── Component ────────────────────────────────────────────
+// ─── Button Component ─────────────────────────────────────
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
   loading?: boolean;
   icon?: React.ReactNode;
   iconPosition?: "left" | "right";
@@ -123,21 +148,21 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {/* Loading spinner */}
-        {loading && <Spinner size={size} />}
+        {loading && <LoadingSpinner size={size} />}
 
         {/* Icon (left) */}
-        {icon && iconPosition === "left" && (
-          <span className="flex items-center justify-center" aria-hidden="true">
+        {!loading && icon && iconPosition === "left" && (
+          <span className="inline-flex items-center justify-center flex-shrink-0" aria-hidden="true">
             {icon}
           </span>
         )}
 
         {/* Label */}
-        {children}
+        <span className={loading ? "opacity-0" : ""}>{children}</span>
 
         {/* Icon (right) */}
-        {icon && iconPosition === "right" && (
-          <span className="flex items-center justify-center" aria-hidden="true">
+        {!loading && icon && iconPosition === "right" && (
+          <span className="inline-flex items-center justify-center flex-shrink-0" aria-hidden="true">
             {icon}
           </span>
         )}
@@ -148,26 +173,28 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
 Button.displayName = "Button";
 
-// ─── Spinner ──────────────────────────────────────────────
+// ─── Loading Spinner ──────────────────────────────────────
 
-function Spinner({ size }: { size?: VariantProps<typeof buttonVariants>["size"] }) {
+function LoadingSpinner({ size }: { size?: VariantProps<typeof buttonVariants>["size"] }) {
   const sizeMap = {
-    xs: 14,
-    sm: 16,
-    md: 18,
-    lg: 20,
-    xl: 24,
+    xs: 12,
+    sm: 14,
+    md: 16,
+    lg: 18,
+    xl: 20,
   };
+
+  const sz = sizeMap[size || "md"];
 
   return (
     <svg
-      width={sizeMap[size || "md"]}
-      height={sizeMap[size || "md"]}
+      width={sz}
+      height={sz}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
-      className="animate-spin"
+      className="animate-spin absolute"
       aria-hidden="true"
     >
       <circle cx="12" cy="12" r="10" opacity="0.25" />
@@ -181,31 +208,23 @@ function Spinner({ size }: { size?: VariantProps<typeof buttonVariants>["size"] 
 export interface ButtonGroupProps {
   children: React.ReactNode;
   orientation?: "horizontal" | "vertical";
+  size?: "sm" | "md" | "lg";
 }
 
 export const ButtonGroup = forwardRef<HTMLDivElement, ButtonGroupProps>(
-  ({ children, orientation = "horizontal" }, ref) => {
+  ({ children, orientation = "horizontal", size = "md" }, ref) => {
+    const gapMap = { sm: "gap-1", md: "gap-2", lg: "gap-3" };
+
     return (
       <div
         ref={ref}
-        className={`flex gap-1 ${
+        className={`flex ${gapMap[size]} ${
           orientation === "vertical" ? "flex-col" : "flex-row"
         }`}
         role="group"
       >
-        {React.Children.map(children, (child, index) => (
-          <div
-            key={index}
-            className={`
-              first:rounded-l-lg last:rounded-r-lg
-              ${orientation === "vertical" ? `
-                first:rounded-t-lg first:rounded-b-none
-                last:rounded-b-lg last:rounded-t-none
-              ` : ""}
-            `}
-          >
-            {child}
-          </div>
+        {React.Children.map(children, (child) => (
+          <>{child}</>
         ))}
       </div>
     );
@@ -216,7 +235,7 @@ ButtonGroup.displayName = "ButtonGroup";
 
 // ─── Toggle Button ────────────────────────────────────────
 
-export interface ToggleButtonProps extends ButtonProps {
+export interface ToggleButtonProps extends Omit<ButtonProps, "aria-pressed" | "onToggle"> {
   isActive?: boolean;
   onToggle?: (active: boolean) => void;
 }
@@ -226,7 +245,7 @@ export const ToggleButton = forwardRef<HTMLButtonElement, ToggleButtonProps>(
     return (
       <Button
         ref={ref}
-        variant={isActive ? "primary" : "secondary"}
+        variant={isActive ? "primary" : "outline"}
         aria-pressed={isActive}
         onClick={(e) => {
           onToggle?.(!isActive);
