@@ -1,12 +1,18 @@
-@import "../components/tokens.css";
-@import "../components/design-system.css";
-@import "./utilities.css";
+@layer theme, base, components, utilities;
+@import "../components/tokens.css" layer(base);
+@import "../components/design-system.css" layer(base);
+@import "./utilities.css" layer(base);
 @import "tailwindcss";
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* Dark mode follows the data-theme attribute (set before first paint, see layout.tsx) */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 }
 
 :root {

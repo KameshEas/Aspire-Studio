@@ -23,7 +23,10 @@ function getInitialTheme(): Theme {
 export const ThemeProvider: React.FC<{children?: React.ReactNode}> = ({children}) => {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
-  useEffect(()=>{ applyThemeVariables(theme); }, [theme]);
+  useEffect(()=>{
+    applyThemeVariables(theme);
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
 
   const toggleTheme = useCallback(()=>{
     setTheme(t=>{

@@ -2,6 +2,10 @@ function projectPath(orgId: string, projectId: string): string {
   return `/api/v1/orgs/${encodeURIComponent(orgId)}/projects/${encodeURIComponent(projectId)}`;
 }
 
+/** Local models on CPU can take minutes, especially on first load. */
+export const GENERATE_TIMEOUT_MS = 180_000;
+const DEFAULT_TIMEOUT_MS = 30_000;
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:3002";
 
 class ApiClient {
@@ -21,7 +25,7 @@ class ApiClient {
     this.tokenGetter = getter;
   }
 
-  private async request<T>(path: string, init?: RequestInit): Promise<T> {
+  private async request<T>(path: string, init?: RequestInit, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<T> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...(init?.headers as Record<string, string>),
@@ -45,7 +49,7 @@ class ApiClient {
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30_000);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     let res: Response;
     try {
@@ -57,7 +61,7 @@ class ApiClient {
     } catch (err: unknown) {
       clearTimeout(timeout);
       if (err instanceof DOMException && err.name === "AbortError") {
-        throw new ApiError(408, "Request timeout");
+        throw new ApiError(408, `Request timed out after ${Math.round(timeoutMs / 1000)}s`);
       }
       throw err;
     } finally {
@@ -177,7 +181,7 @@ class ApiClient {
 
   // ── Generate ───────────────────────────────────────
   generate(orgId: string, projectId: string, data: GenerateRequest) {
-    return this.request<GenerateResponse>(`${projectPath(orgId, projectId)}/generate`, { method: "POST", body: JSON.stringify(data) });
+    return this.request<GenerateResponse>(`${projectPath(orgId, projectId)}/generate`, { method: "POST", body: JSON.stringify(data) }, GENERATE_TIMEOUT_MS);
   }
 
   // ── Artifacts ──────────────────────────────────────

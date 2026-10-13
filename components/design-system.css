@@ -173,8 +173,7 @@
    DARK MODE - Premium, Luxurious Feel
    ============================================================================ */
 
-@media (prefers-color-scheme: dark) {
-  :root {
+:root[data-theme="dark"] {& {
     /* Dark mode surfaces with careful depth */
     --bg: #0a0e1a;
     --bg-secondary: #0f1724;
@@ -339,8 +338,7 @@ p, .text-body {
   color: var(--primary-900);
 }
 
-@media (prefers-color-scheme: dark) {
-  ::selection {
+:root[data-theme="dark"] {& ::selection {
     background-color: var(--primary-800);
     color: var(--primary-100);
   }
@@ -351,8 +349,7 @@ p, .text-body {
   outline-offset: 2px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :focus-visible {
+:root[data-theme="dark"] {& :focus-visible {
     outline: 2px solid var(--primary-400);
   }
 }
@@ -379,12 +376,9 @@ p, .text-body {
   background: var(--border-strong);
 }
 
-@media (prefers-color-scheme: dark) {
-  ::-webkit-scrollbar-thumb {
+:root[data-theme="dark"] {& ::-webkit-scrollbar-thumb {
     background: var(--slate-700);
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
+  }& ::-webkit-scrollbar-thumb:hover {
     background: var(--slate-600);
   }
 }
@@ -432,8 +426,7 @@ p, .text-body {
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-@media (prefers-color-scheme: dark) {
-  .glass {
+:root[data-theme="dark"] {& .glass {
     background: rgba(15, 23, 42, 0.4);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }

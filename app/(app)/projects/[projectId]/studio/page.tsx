@@ -40,7 +40,7 @@ function StudioContent() {
   const [prompt, setPrompt] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
   const [temperature, setTemperature] = useState(0.7);
-  const [maxTokens, setMaxTokens] = useState(1024);
+  const [maxTokens, setMaxTokens] = useState(512);
   const [values, setValues] = useState<Record<string, string>>({});
   const [showErrors, setShowErrors] = useState(false);
   const [result, setResult] = useState<GenerateResponse | null>(null);

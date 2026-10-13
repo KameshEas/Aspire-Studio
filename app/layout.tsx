@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   description: "Transform your idea into a digital empire",
 };
 
+const themeScript = `try{var t=localStorage.getItem("theme");if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t}catch(e){}`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -26,7 +28,10 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider signInUrl="/login" signUpUrl="/signup" afterSignOutUrl="/login">
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
+        <head>
+          <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        </head>
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
           <Providers>
             {children}
