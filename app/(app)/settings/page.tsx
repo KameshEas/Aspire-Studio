@@ -9,48 +9,48 @@ const styles = {
   page: `max-w-2xl mx-auto`,
   title: `
     text-3xl font-bold mb-8
-    text-var(--color-text)
+    text-[color:var(--color-text)]
   `,
   section: `
     mb-8
-    bg-var(--color-surface-1)
-    border border-var(--color-border)
+    bg-[color:var(--color-surface-1)]
+    border border-[color:var(--color-border)]
     rounded-lg
     p-6
     transition-all duration-200
   `,
   sectionTitle: `
     text-xl font-semibold mb-6
-    text-var(--color-text)
+    text-[color:var(--color-text)]
     pb-4
-    border-b border-var(--color-border)
+    border-b border-[color:var(--color-border)]
   `,
   fieldLabel: `
     block text-xs font-semibold uppercase tracking-wider
-    text-var(--color-text-muted)
+    text-[color:var(--color-text-muted)]
     mb-2
   `,
   fieldValue: `
     text-sm font-medium
-    text-var(--color-text)
+    text-[color:var(--color-text)]
     py-2
   `,
   fieldGroup: `
-    mb-4 pb-4 border-b border-var(--color-border) last:mb-0 last:pb-0 last:border-0
+    mb-4 pb-4 border-b border-[color:var(--color-border)] last:mb-0 last:pb-0 last:border-0
   `,
   membersList: `
     space-y-3
   `,
   memberItem: `
     flex items-center gap-3 p-3
-    bg-var(--color-surface-2)
-    border border-var(--color-border)
+    bg-[color:var(--color-surface-2)]
+    border border-[color:var(--color-border)]
     rounded-md
     transition-colors duration-200
   `,
   memberAvatar: `
     w-10 h-10 rounded-full
-    bg-var(--color-primary-600)
+    bg-[color:var(--color-primary-600)]
     text-white
     flex items-center justify-center
     flex-shrink-0
@@ -59,22 +59,22 @@ const styles = {
   memberInfo: `flex-1`,
   memberName: `
     text-sm font-medium
-    text-var(--color-text)
+    text-[color:var(--color-text)]
   `,
   memberEmail: `
     text-xs
-    text-var(--color-text-muted)
+    text-[color:var(--color-text-muted)]
   `,
   memberRole: `
     text-xs font-semibold uppercase
     px-2.5 py-1
-    bg-var(--color-surface-3)
-    text-var(--color-text-muted)
+    bg-[color:var(--color-surface-3)]
+    text-[color:var(--color-text-muted)]
     rounded
   `,
   emptyState: `
     text-center py-8
-    text-var(--color-text-muted)
+    text-[color:var(--color-text-muted)]
   `,
 };
 
@@ -86,7 +86,7 @@ export default function SettingsPage() {
   if (!activeOrgId) {
     return (
       <div className="text-center py-16">
-        <p className="text-var(--color-text-muted)">Select an organization to view settings.</p>
+        <p className="text-[color:var(--color-text-muted)]">Select an organization to view settings.</p>
       </div>
     );
   }
@@ -124,7 +124,7 @@ export default function SettingsPage() {
             <div className={styles.fieldGroup}>
               <label className={styles.fieldLabel}>Slug</label>
               <div className={styles.fieldValue}>
-                <code className="bg-var(--color-surface-2) px-2 py-1 rounded text-xs">
+                <code className="bg-[color:var(--color-surface-2)] px-2 py-1 rounded text-xs">
                   {org.slug}
                 </code>
               </div>

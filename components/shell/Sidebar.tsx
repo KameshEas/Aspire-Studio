@@ -4,14 +4,15 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
+import { FileText, History, Image as ImageIcon, Sparkles } from "lucide-react";
 import { useOrgs, useProjects } from "../../lib/hooks";
 import { useActiveOrg } from "../../lib/org-context";
 
 const PROJECT_SUBNAV = [
-  { href: "/templates", label: "Templates", icon: "📝" },
-  { href: "/studio", label: "Studio", icon: "🎛️" },
-  { href: "/artifacts", label: "Artifacts", icon: "🖼️" },
-  { href: "/generations", label: "History", icon: "🕒" },
+  { href: "/templates", label: "Templates", icon: <FileText size={14} /> },
+  { href: "/studio", label: "Studio", icon: <Sparkles size={14} /> },
+  { href: "/artifacts", label: "Artifacts", icon: <ImageIcon size={14} /> },
+  { href: "/generations", label: "History", icon: <History size={14} /> },
 ];
 
 export default function Sidebar() {

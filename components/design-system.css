@@ -519,3 +519,22 @@ p, .text-body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Aliases for variable names used by older components; resolve through the primary tokens so dark mode follows. */
+:root {
+  --primary-950: #1e1b4b;
+  --color-primary-50: var(--primary-50);
+  --color-primary-100: var(--primary-100);
+  --color-primary-500: var(--primary-500);
+  --color-primary-700: var(--primary-700);
+  --color-primary-900: var(--primary-900);
+  --color-danger-light: var(--danger-light);
+  --color-success-light: var(--success-light);
+  --color-error-bg: var(--danger-light);
+  --color-surface: var(--surface-1);
+  --spacing-1: var(--space-1);
+  --spacing-2: var(--space-2);
+  --spacing-3: var(--space-3);
+  --spacing-4: var(--space-4);
+  --spacing-5: var(--space-5);
+}

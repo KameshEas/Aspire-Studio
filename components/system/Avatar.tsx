@@ -12,11 +12,11 @@ const avatarVariants = cva(
   // Base avatar styles
   `
     inline-flex items-center justify-center
-    bg-var(--slate-200) dark:bg-var(--slate-700)
-    text-var(--slate-900) dark:text-var(--slate-100)
+    bg-[color:var(--slate-200)] dark:bg-[color:var(--slate-700)]
+    text-[color:var(--slate-900)] dark:text-[color:var(--slate-100)]
     font-semibold rounded-full overflow-hidden
     flex-shrink-0
-    border-2 border-var(--surface-1) dark:border-var(--surface-1)
+    border-2 border-[color:var(--surface-1)] dark:border-[color:var(--surface-1)]
   `,
   {
     variants: {
@@ -30,11 +30,11 @@ const avatarVariants = cva(
       },
 
       variant: {
-        default: "bg-var(--slate-200) dark:bg-var(--slate-700)",
-        primary: "bg-var(--primary-100) dark:bg-var(--primary-900) text-var(--primary-900) dark:text-var(--primary-100)",
-        success: "bg-var(--success-light) dark:bg-var(--emerald-900) text-var(--success-dark) dark:text-var(--emerald-100)",
-        warning: "bg-var(--warning-light) dark:bg-[color-mix(in_srgb,var(--warning)_20%,black)] text-var(--warning-dark) dark:text-var(--warning)",
-        danger: "bg-var(--danger-light) dark:bg-[color-mix(in_srgb,var(--danger)_20%,black)] text-var(--danger-dark) dark:text-var(--danger)",
+        default: "bg-[color:var(--slate-200)] dark:bg-[color:var(--slate-700)]",
+        primary: "bg-[color:var(--primary-100)] dark:bg-[color:var(--primary-900)] text-[color:var(--primary-900)] dark:text-[color:var(--primary-100)]",
+        success: "bg-[color:var(--success-light)] dark:bg-[color:var(--emerald-900)] text-[color:var(--success-dark)] dark:text-[color:var(--emerald-100)]",
+        warning: "bg-[color:var(--warning-light)] dark:bg-[color-mix(in_srgb,var(--warning)_20%,black)] text-[color:var(--warning-dark)] dark:text-[color:var(--warning)]",
+        danger: "bg-[color:var(--danger-light)] dark:bg-[color-mix(in_srgb,var(--danger)_20%,black)] text-[color:var(--danger-dark)] dark:text-[color:var(--danger)]",
       },
     },
 
@@ -104,7 +104,7 @@ export const Avatar = forwardRef<HTMLImageElement, AvatarProps>(
         {status && (
           <div
             className={`
-              absolute bottom-0 right-0 rounded-full border-2 border-var(--surface-1)
+              absolute bottom-0 right-0 rounded-full border-2 border-[color:var(--surface-1)]
               ${
                 size === "xs"
                   ? "w-1.5 h-1.5"
@@ -116,12 +116,12 @@ export const Avatar = forwardRef<HTMLImageElement, AvatarProps>(
               }
               ${
                 status === "online"
-                  ? "bg-var(--success)"
+                  ? "bg-[color:var(--success)]"
                   : status === "away"
-                    ? "bg-var(--warning)"
+                    ? "bg-[color:var(--warning)]"
                     : status === "busy"
-                      ? "bg-var(--danger)"
-                      : "bg-var(--slate-500)"
+                      ? "bg-[color:var(--danger)]"
+                      : "bg-[color:var(--slate-500)]"
               }
             `}
             title={`Status: ${status}`}
@@ -174,7 +174,7 @@ export const AvatarGroup = forwardRef<HTMLDivElement, AvatarGroupProps>(
         )}
 
         {hiddenCount > 0 && (
-          <div className={`${sizeMap[size ?? "md"]} flex items-center justify-center rounded-full bg-var(--slate-300) dark:bg-var(--slate-600) text-xs font-semibold text-var(--slate-900) dark:text-var(--slate-100)`}>
+          <div className={`${sizeMap[size ?? "md"]} flex items-center justify-center rounded-full bg-[color:var(--slate-300)] dark:bg-[color:var(--slate-600)] text-xs font-semibold text-[color:var(--slate-900)] dark:text-[color:var(--slate-100)]`}>
             +{hiddenCount}
           </div>
         )}

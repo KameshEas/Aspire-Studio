@@ -131,8 +131,8 @@ export default function DashboardPage() {
         {/* Empty State */}
         <div className="text-center max-w-md">
           <div className="text-6xl mb-6">🚀</div>
-          <h2 className="text-3xl font-bold text-var(--text) mb-3">No projects yet</h2>
-          <p className="text-var(--text-secondary) mb-8 text-lg">
+          <h2 className="text-3xl font-bold text-[color:var(--text)] mb-3">No projects yet</h2>
+          <p className="text-[color:var(--text-secondary)] mb-8 text-lg">
             Create your first AI generation project to start building intelligent features instantly.
           </p>
           <Button onClick={open} size="lg" fullWidth>
@@ -201,8 +201,8 @@ export default function DashboardPage() {
       <div className="flex flex-col gap-6">
         {/* Title */}
         <div>
-          <h1 className="text-4xl font-bold text-var(--text) mb-2">{activeOrg?.name ?? "Dashboard"}</h1>
-          <p className="text-var(--text-secondary)">
+          <h1 className="text-4xl font-bold text-[color:var(--text)] mb-2">{activeOrg?.name ?? "Dashboard"}</h1>
+          <p className="text-[color:var(--text-secondary)]">
             Manage your AI generation projects and templates
           </p>
         </div>
@@ -212,8 +212,8 @@ export default function DashboardPage() {
           <Card variant="elevated" padding="md">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-var(--text-secondary)">Total Projects</p>
-                <p className="text-2xl font-bold text-var(--text) mt-1">{projects.length}</p>
+                <p className="text-sm font-medium text-[color:var(--text-secondary)]">Total Projects</p>
+                <p className="text-2xl font-bold text-[color:var(--text)] mt-1">{projects.length}</p>
               </div>
               <div className="text-4xl opacity-20">📦</div>
             </div>
@@ -222,8 +222,8 @@ export default function DashboardPage() {
           <Card variant="elevated" padding="md">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-var(--text-secondary)">Generations</p>
-                <p className="text-2xl font-bold text-var(--text) mt-1">{totalGenerations}</p>
+                <p className="text-sm font-medium text-[color:var(--text-secondary)]">Generations</p>
+                <p className="text-2xl font-bold text-[color:var(--text)] mt-1">{totalGenerations}</p>
               </div>
               <div className="text-4xl opacity-20">⚡</div>
             </div>
@@ -232,7 +232,7 @@ export default function DashboardPage() {
           <Card variant="elevated" padding="md">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-var(--text-secondary)">Quick Action</p>
+                <p className="text-sm font-medium text-[color:var(--text-secondary)]">Quick Action</p>
                 <Button onClick={open} size="sm" className="mt-2">
                   + New Project
                 </Button>
@@ -324,20 +324,20 @@ function ProjectCard({ project }: { project: Project }) {
     >
       {/* Header */}
       <div className="mb-4">
-        <h3 className="text-lg font-bold text-var(--text) group-hover:text-var(--primary-600) transition-colors line-clamp-2">
+        <h3 className="text-lg font-bold text-[color:var(--text)] group-hover:text-[color:var(--primary-600)] transition-colors line-clamp-2">
           {project.name}
         </h3>
       </div>
 
       {/* Description */}
       {project.description && (
-        <p className="text-sm text-var(--text-secondary) mb-4 line-clamp-2 flex-grow">
+        <p className="text-sm text-[color:var(--text-secondary)] mb-4 line-clamp-2 flex-grow">
           {project.description}
         </p>
       )}
 
       {/* Stats */}
-      <div className="flex flex-wrap gap-2 mb-6 pt-4 border-t border-var(--border)">
+      <div className="flex flex-wrap gap-2 mb-6 pt-4 border-t border-[color:var(--border)]">
         <Badge variant="primary" size="sm">
           <span>⚡</span>
           <span>{project.generationCount} {project.generationCount === 1 ? "Generation" : "Generations"}</span>
@@ -349,7 +349,7 @@ function ProjectCard({ project }: { project: Project }) {
       </div>
 
       {/* CTA */}
-      <div className="flex items-center text-sm font-medium text-var(--primary-600) opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center text-sm font-medium text-[color:var(--primary-600)] opacity-0 group-hover:opacity-100 transition-opacity">
         <span>Open Project</span>
         <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
       </div>

@@ -2,369 +2,259 @@
 
 import React, { useState } from "react";
 import { useParams } from "next/navigation";
+import { Archive, Check, Download, FileText, Image as ImageIcon, Package, Star } from "lucide-react";
 import { useActiveOrg } from "../../../../../lib/org-context";
-import { useArtifacts, useDeleteArtifact } from "../../../../../lib/hooks";
+import { useArtifacts, useUpdateArtifact } from "../../../../../lib/hooks";
 import { useToast } from "../../../../../lib/hooks/useToast";
-import type { Artifact } from "../../../../../lib/api";
-
+import type { Artifact, ArtifactStatus } from "../../../../../lib/api";
+import { formatBytes, timeAgo } from "../../../../../lib/variables";
 import {
-  Container,
-  Stack,
-  Flex,
-  Grid,
+  Badge,
   Button,
+  Card,
   Dialog,
   DialogContent,
-  useDialog,
-  LoadingState,
   EmptyState,
   ErrorState,
+  SkeletonGrid,
 } from "../../../../../components/system";
+import { ArtifactPreview } from "../../../../../components/features/ArtifactPreview";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3002";
+const PAGE_SIZE = 24;
 
-const TYPE_FILTERS = [
-  { label: "All", value: "" },
-  { label: "Text", value: "text" },
-  { label: "Image", value: "image" },
+const STATUS_TABS: { value: ArtifactStatus | "active"; label: string }[] = [
+  { value: "active", label: "Active" },
+  { value: "approved", label: "Approved" },
+  { value: "draft", label: "Drafts" },
+  { value: "archived", label: "Archived" },
 ];
 
-export default function ArtifactsPage() {
-  const params = useParams<{ projectId: string }>();
-  const { activeOrgId } = useActiveOrg();
-  const { success } = useToast();
-  const { isOpen: previewOpen, open: openPreview, close: closePreview } = useDialog();
-  const { isOpen: deleteOpen, open: openDelete, close: closeDelete } = useDialog();
+const TYPE_TABS = [
+  { value: "", label: "All types" },
+  { value: "text", label: "Text" },
+  { value: "image", label: "Images" },
+];
 
-  const orgId = activeOrgId ?? "";
-  const projectId = params.projectId;
+const statusVariant: Record<ArtifactStatus, "success" | "default" | "warning"> = {
+  approved: "success",
+  draft: "default",
+  archived: "warning",
+};
 
-  const [typeFilter, setTypeFilter] = useState("");
-  const [previewArtifact, setPreviewArtifact] = useState<Artifact | null>(null);
-  const [deleteArtifactId, setDeleteArtifactId] = useState<string | null>(null);
-
-  const { data, isLoading, error: fetchError } = useArtifacts(orgId, projectId, {
-    type: typeFilter || undefined,
-  });
-  const deleteArtifact = useDeleteArtifact(orgId, projectId);
-
-  const handlePreview = (artifact: Artifact) => {
-    setPreviewArtifact(artifact);
-    openPreview();
-  };
-
-  const handleDeleteClick = (artifactId: string) => {
-    setDeleteArtifactId(artifactId);
-    openDelete();
-  };
-
-  const handleDelete = () => {
-    if (!deleteArtifactId) return;
-
-    deleteArtifact.mutate(deleteArtifactId, {
-      onSuccess: () => {
-        success({
-          title: "Artifact deleted",
-          description: "The artifact has been removed",
-        });
-        closeDelete();
-        setDeleteArtifactId(null);
-      },
-    });
-  };
-
-  // Show loading state
-  if (isLoading) {
-    return <LoadingState message="Loading artifacts..." />;
-  }
-
-  // Show error state
-  if (fetchError) {
-    return (
-      <Container>
-        <ErrorState
-          title="Failed to load artifacts"
-          message={fetchError instanceof Error ? fetchError.message : "Unknown error"}
-          action={{
-            label: "Try Again",
-            onClick: () => window.location.reload(),
-          }}
-        />
-      </Container>
-    );
-  }
-
-  // Show empty state
-  if (!data?.items?.length) {
-    return (
-      <Container size="xl">
-        <EmptyState
-          icon={<div className="text-6xl">📦</div>}
-          title="No artifacts yet"
-          description="Generate content using templates or the generation studio to create your first artifact."
-          example="Example: Generate product descriptions, social media posts, or marketing copy"
-          action={{
-            label: "Go to Studio",
-            onClick: () => (window.location.href = `/projects/${projectId}/studio`),
-          }}
-        />
-      </Container>
-    );
-  }
-
+function Rating({ value, onChange }: { value: number | null; onChange?: (rating: number) => void }) {
   return (
-    <Container size="xl">
-      <Stack spacing="lg">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Artifacts</h1>
-          <p className="text-gray-600 mt-2">
-            {data.items.length} artifact{data.items.length !== 1 ? "s" : ""} · All generated outputs
-          </p>
-        </div>
-
-        {/* Type Filter */}
-        <div className="flex flex-wrap gap-2">
-          {TYPE_FILTERS.map((filter) => (
-            <button
-              key={filter.value}
-              onClick={() => setTypeFilter(filter.value)}
-              className={`
-                px-4 py-2 rounded-full text-sm font-medium transition-all
-                ${
-                  typeFilter === filter.value
-                    ? "bg-indigo-600 text-white shadow-md"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }
-              `}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Artifacts Grid */}
-        <Grid columns={4} gap="lg" responsive autoFit minWidth="220px">
-          {data.items.map((artifact) => (
-            <ArtifactCard
-              key={artifact.id}
-              artifact={artifact}
-              onPreview={() => handlePreview(artifact)}
-              onDelete={() => handleDeleteClick(artifact.id)}
-            />
-          ))}
-        </Grid>
-
-        {/* Preview Dialog */}
-        <Dialog open={previewOpen} onOpenChange={closePreview}>
-          {previewArtifact && (
-            <ArtifactPreviewDialog
-              artifact={previewArtifact}
-              onClose={closePreview}
-            />
-          )}
-        </Dialog>
-
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={deleteOpen} onOpenChange={closeDelete}>
-          <DialogContent title="Delete Artifact?" closeButton>
-            <Stack spacing="md">
-              <p className="text-gray-700">
-                This will permanently delete the artifact. This action cannot be undone.
-              </p>
-              <Flex gap="sm" justify="end">
-                <Button
-                  variant="secondary"
-                  onClick={closeDelete}
-                  type="button"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="danger"
-                  onClick={handleDelete}
-                  loading={deleteArtifact.isPending}
-                >
-                  Delete Artifact
-                </Button>
-              </Flex>
-            </Stack>
-          </DialogContent>
-        </Dialog>
-      </Stack>
-    </Container>
+    <div className="flex items-center gap-0.5" role={onChange ? "radiogroup" : undefined} aria-label="Rating">
+      {[1, 2, 3, 4, 5].map((n) => {
+        const filled = (value ?? 0) >= n;
+        const star = <Star size={onChange ? 20 : 14} className={filled ? "fill-[color:var(--warning)] text-[color:var(--warning)]" : "text-[color:var(--border-strong)]"} />;
+        return onChange ? (
+          <button key={n} type="button" role="radio" aria-checked={value === n} aria-label={`${n} star${n === 1 ? "" : "s"}`} onClick={() => onChange(n)}>
+            {star}
+          </button>
+        ) : (
+          <span key={n}>{star}</span>
+        );
+      })}
+    </div>
   );
 }
 
-interface ArtifactCardProps {
-  artifact: Artifact;
-  onPreview: () => void;
-  onDelete: () => void;
-}
-
-function ArtifactCard({ artifact, onPreview, onDelete }: ArtifactCardProps) {
-  const isImage = artifact.type === "image";
-
+function ArtifactCard({ artifact, onOpen }: { artifact: Artifact; onOpen: () => void }) {
+  const model = artifact.metadata?.model as string | undefined;
   return (
-    <button
-      onClick={onPreview}
-      className="
-        border border-gray-200 rounded-lg overflow-hidden
-        hover:border-indigo-300 hover:shadow-lg
-        transition-all duration-200 focus:outline-none
-        focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
-        group
-      "
-    >
-      {/* Thumbnail */}
-      <div className="w-full h-40 bg-gray-100 overflow-hidden flex items-center justify-center">
-        {isImage ? (
-          <img
-            src={`${BACKEND_URL}${artifact.downloadUrl}`}
-            alt="artifact"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
-          />
+    <Card variant="interactive" padding="none" onClick={onOpen} className="overflow-hidden">
+      <div className="flex h-36 items-center justify-center overflow-hidden bg-[color:var(--surface-2)]">
+        {artifact.type === "image" ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={artifact.downloadUrl} alt={artifact.fileName ?? "Generated image"} loading="lazy" className="h-full w-full object-cover" />
         ) : (
-          <div className="text-5xl">📄</div>
+          <FileText size={36} className="text-[color:var(--text-muted)]" />
         )}
       </div>
-
-      {/* Info */}
-      <div className="p-3 bg-white">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <div
-              className={`
-                text-xs font-bold uppercase tracking-wide
-                ${isImage ? "text-indigo-600" : "text-gray-600"}
-              `}
-            >
-              {artifact.type}
-            </div>
-            <p className="text-sm text-gray-600 mt-1">
-              {new Date(artifact.createdAt).toLocaleDateString()}
-            </p>
-          </div>
-          <div
-            className="flex gap-1 flex-shrink-0"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <a
-              href={`${BACKEND_URL}${artifact.downloadUrl}`}
-              download
-              className="text-gray-600 hover:text-indigo-600 transition-colors"
-              title="Download"
-            >
-              <Button size="xs" variant="secondary" aria-label="Download artifact">
-                📥
-              </Button>
-            </a>
-            <Button
-              size="xs"
-              variant="danger"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              aria-label="Delete artifact"
-            >
-              ✕
-            </Button>
-          </div>
+      <div className="space-y-2 p-4">
+        <div className="flex items-center justify-between gap-2">
+          <span className="truncate text-sm font-medium text-[color:var(--text)]">{artifact.fileName ?? artifact.id}</span>
+          <Badge size="sm" variant={statusVariant[artifact.status]}>
+            {artifact.status}
+          </Badge>
         </div>
+        <div className="flex items-center justify-between text-xs text-[color:var(--text-muted)]">
+          <span>{[model, formatBytes(artifact.sizeBytes)].filter((v) => v && v !== "—").join(" · ")}</span>
+          <span>{timeAgo(artifact.createdAt)}</span>
+        </div>
+        <Rating value={artifact.rating} />
       </div>
-    </button>
+    </Card>
   );
 }
 
-interface ArtifactPreviewDialogProps {
-  artifact: Artifact;
-  onClose: () => void;
-}
+export default function ArtifactsPage() {
+  const { projectId } = useParams<{ projectId: string }>();
+  const { activeOrgId } = useActiveOrg();
+  const orgId = activeOrgId ?? "";
+  const { success, error: showError } = useToast();
 
-function ArtifactPreviewDialog({
-  artifact,
-  onClose,
-}: ArtifactPreviewDialogProps) {
-  const isImage = artifact.type === "image";
-  const { success } = useToast();
+  const [statusTab, setStatusTab] = useState<ArtifactStatus | "active">("active");
+  const [type, setType] = useState("");
+  const [page, setPage] = useState(0);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const copyDownloadLink = async () => {
+  const { data, isLoading, error, refetch } = useArtifacts(orgId, projectId, {
+    type: type || undefined,
+    status: statusTab === "active" ? undefined : statusTab,
+    limit: PAGE_SIZE,
+    offset: page * PAGE_SIZE,
+  });
+  const updateArtifact = useUpdateArtifact(orgId, projectId);
+
+  const artifacts = (data?.artifacts ?? []).filter((a) => statusTab !== "active" || a.status !== "archived");
+  const selected = data?.artifacts.find((a) => a.id === selectedId) ?? null;
+  const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE));
+
+  const patch = async (artifact: Artifact, changes: { status?: ArtifactStatus; rating?: number }, message: string) => {
     try {
-      const link = `${BACKEND_URL}${artifact.downloadUrl}`;
-      await navigator.clipboard.writeText(link);
-      success({
-        title: "Copied!",
-        description: "Download link copied to clipboard",
-      });
-    } catch {
-      console.error("Failed to copy");
+      await updateArtifact.mutateAsync({ artifactId: artifact.id, ...changes });
+      success({ title: message });
+    } catch (err) {
+      showError({ title: "Update failed", description: err instanceof Error ? err.message : "Unknown error" });
     }
   };
 
+  const tabClass = (active: boolean) =>
+    `rounded-full border px-3 py-1 text-sm transition-colors ${
+      active
+        ? "border-[color:var(--primary-600)] bg-[color:var(--primary-600)] text-white"
+        : "border-[color:var(--border)] text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)]"
+    }`;
+
   return (
-    <DialogContent title="Artifact Preview" closeButton>
-      <Stack spacing="md">
-        {/* Preview */}
-        <div className="bg-gray-50 rounded-lg p-4">
-          {isImage ? (
-            <img
-              src={`${BACKEND_URL}${artifact.downloadUrl}`}
-              alt="artifact preview"
-              className="w-full rounded-lg"
-            />
-          ) : (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">📄</div>
-              <p className="text-gray-700 font-medium">Text Artifact</p>
-              <p className="text-sm text-gray-600 mt-1">
-                {artifact.fileName || "Unnamed file"}
-              </p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-[color:var(--text)]">Artifacts</h1>
+        <p className="mt-1 text-[color:var(--text-secondary)]">Review, rate and approve what you have generated.</p>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by status">
+          {STATUS_TABS.map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              aria-pressed={statusTab === tab.value}
+              className={tabClass(statusTab === tab.value)}
+              onClick={() => {
+                setStatusTab(tab.value);
+                setPage(0);
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by type">
+          {TYPE_TABS.map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              aria-pressed={type === tab.value}
+              className={tabClass(type === tab.value)}
+              onClick={() => {
+                setType(tab.value);
+                setPage(0);
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {isLoading ? (
+        <SkeletonGrid count={8} columns={4} />
+      ) : error ? (
+        <ErrorState
+          fullHeight={false}
+          title="Could not load artifacts"
+          message={error instanceof Error ? error.message : "Unknown error"}
+          action={{ label: "Try again", onClick: () => refetch() }}
+        />
+      ) : artifacts.length === 0 ? (
+        <EmptyState
+          fullHeight={false}
+          icon={<Package size={40} className="text-[color:var(--text-muted)]" />}
+          title="No artifacts here"
+          description="Everything you generate is saved as a draft artifact. Approve the ones you want to keep."
+          action={{ label: "Open the Studio", onClick: () => (window.location.href = `/projects/${projectId}/studio`) }}
+        />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {artifacts.map((artifact) => (
+              <ArtifactCard key={artifact.id} artifact={artifact} onOpen={() => setSelectedId(artifact.id)} />
+            ))}
+          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-3">
+              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)}>
+                Previous
+              </Button>
+              <span className="text-sm text-[color:var(--text-muted)]">
+                Page {page + 1} of {totalPages}
+              </span>
+              <Button variant="outline" size="sm" disabled={page + 1 >= totalPages} onClick={() => setPage(page + 1)}>
+                Next
+              </Button>
             </div>
           )}
-        </div>
+        </>
+      )}
 
-        {/* Info */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-xs font-semibold text-gray-600 uppercase">
-              Type
-            </p>
-            <p className="text-sm font-medium text-gray-900 capitalize">
-              {artifact.type}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-600 uppercase">
-              Created
-            </p>
-            <p className="text-sm font-medium text-gray-900">
-              {new Date(artifact.createdAt).toLocaleDateString()}
-            </p>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <Flex gap="sm">
-          <a
-            href={`${BACKEND_URL}${artifact.downloadUrl}`}
-            download
-            className="flex-1"
-          >
-            <Button fullWidth>📥 Download</Button>
-          </a>
-          <Button
-            variant="secondary"
-            onClick={copyDownloadLink}
-            aria-label="Copy download link"
-          >
-            📋
-          </Button>
-        </Flex>
-      </Stack>
-    </DialogContent>
+      <Dialog open={!!selected} onOpenChange={(open) => !open && setSelectedId(null)}>
+        <DialogContent title={selected?.fileName ?? "Artifact"} size="lg">
+          {selected && (
+            <div className="space-y-5">
+              <ArtifactPreview type={selected.type} downloadUrl={selected.downloadUrl} className="max-h-96 w-full" />
+              <div className="flex flex-wrap items-center gap-3 text-sm text-[color:var(--text-muted)]">
+                <Badge variant={statusVariant[selected.status]}>{selected.status}</Badge>
+                {selected.type === "image" ? <ImageIcon size={14} /> : <FileText size={14} />}
+                <span>{formatBytes(selected.sizeBytes)}</span>
+                <span>{timeAgo(selected.createdAt)}</span>
+              </div>
+              <div>
+                <div className="mb-1 text-sm font-semibold text-[color:var(--text)]">Rating</div>
+                <Rating value={selected.rating} onChange={(rating) => patch(selected, { rating }, "Rating saved")} />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {selected.status !== "approved" && (
+                  <Button icon={<Check size={16} />} loading={updateArtifact.isPending} onClick={() => patch(selected, { status: "approved" }, "Artifact approved")}>
+                    Approve
+                  </Button>
+                )}
+                {selected.status === "approved" && (
+                  <Button variant="outline" onClick={() => patch(selected, { status: "draft" }, "Moved back to drafts")}>
+                    Unapprove
+                  </Button>
+                )}
+                {selected.status !== "archived" ? (
+                  <Button variant="outline" icon={<Archive size={16} />} onClick={() => patch(selected, { status: "archived" }, "Artifact archived")}>
+                    Archive
+                  </Button>
+                ) : (
+                  <Button variant="outline" onClick={() => patch(selected, { status: "draft" }, "Artifact restored")}>
+                    Restore
+                  </Button>
+                )}
+                <a
+                  href={`${selected.downloadUrl}&dl=1`}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--border)] px-4 py-2 text-sm font-medium text-[color:var(--text)] hover:bg-[color:var(--surface-hover)]"
+                >
+                  <Download size={16} /> Download
+                </a>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

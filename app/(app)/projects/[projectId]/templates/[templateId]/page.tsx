@@ -1,373 +1,359 @@
 "use client";
 
-import React, { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { ArrowLeft, CheckCircle2, History, Play, Save } from "lucide-react";
 import { useActiveOrg } from "../../../../../../lib/org-context";
 import {
-  useTemplate,
+  useActivateTemplateVersion,
   useCreateTemplateVersion,
-  useGenerate,
-  useModels,
+  useTemplate,
+  useTestTemplate,
+  useUpdateTemplate,
 } from "../../../../../../lib/hooks";
-import type { GenerateCandidate } from "../../../../../../lib/api";
-import Card from "../../../../../../components/Card";
-import Button from "../../../../../../components/Button";
-import Skeleton from "../../../../../../components/Skeleton";
+import { useToast } from "../../../../../../lib/hooks/useToast";
+import type { TemplateVersion, VariableDefinition, VariablesSchema, VariableType } from "../../../../../../lib/api";
+import {
+  defaultValues,
+  estimateTokens,
+  renderPrompt,
+  stableStringify,
+  syncSchemaWithPrompt,
+  timeAgo,
+  validateValues,
+} from "../../../../../../lib/variables";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  ErrorState,
+  Input,
+  LoadingState,
+  Textarea,
+} from "../../../../../../components/system";
+import { VariableForm } from "../../../../../../components/features/VariableForm";
 
-// Extract {{variable}} slots from a prompt string
-function extractVariables(prompt: string): string[] {
-  const matches = prompt.match(/\{\{(\w+)\}\}/g) ?? [];
-  return [...new Set(matches.map((m) => m.slice(2, -2)))];
-}
+const VARIABLE_TYPES: VariableType[] = ["text", "textarea", "number", "select", "checkbox", "date"];
 
-export default function TemplatePage() {
-  const params = useParams<{ projectId: string; templateId: string }>();
-  const router = useRouter();
+const smallInput =
+  "rounded-md border border-[color:var(--border)] bg-[color:var(--surface-input)] px-2 py-1.5 text-sm text-[color:var(--text)]";
+
+export default function TemplateEditorPage() {
+  const { projectId, templateId } = useParams<{ projectId: string; templateId: string }>();
   const { activeOrgId } = useActiveOrg();
   const orgId = activeOrgId ?? "";
-  const { projectId, templateId } = params;
+  const { success, error: showError } = useToast();
 
-  const { data: template, isLoading } = useTemplate(orgId, projectId, templateId);
-  const { data: modelsData } = useModels();
+  const { data: template, isLoading, error, refetch } = useTemplate(orgId, projectId, templateId);
+  const updateTemplate = useUpdateTemplate(orgId, projectId, templateId);
   const createVersion = useCreateTemplateVersion(orgId, projectId, templateId);
-  const generate = useGenerate(orgId, projectId);
+  const activateVersion = useActivateTemplateVersion(orgId, projectId, templateId);
+  const testTemplate = useTestTemplate(orgId, projectId, templateId);
 
-  // Editor state
-  const [editingPrompt, setEditingPrompt] = useState("");
-  const [isDirty, setIsDirty] = useState(false);
-  const [activeVersionId, setActiveVersionId] = useState<string | null>(null);
+  const activeVersion = template?.versions.find((v) => v.isActive) ?? template?.versions[0];
 
-  // Generate state
-  const [selectedModel, setSelectedModel] = useState("");
-  const [variables, setVariables] = useState<Record<string, string>>({});
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [prompt, setPrompt] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
-  const [temperature, setTemperature] = useState(0.7);
-  const [maxTokens, setMaxTokens] = useState(1024);
-  const [result, setResult] = useState<{ candidates: GenerateCandidate[]; usage: { tokensIn: number; tokensOut: number; costUsd: number } } | null>(null);
-  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [schemaOverrides, setSchemaOverrides] = useState<VariablesSchema>({});
+  const [loadedVersionId, setLoadedVersionId] = useState<string | null>(null);
+  const [testValues, setTestValues] = useState<Record<string, string>>({});
 
-  // Seed editor when template loads (only once per version id change)
-  const latestVersionId = template?.latestVersion?.id;
-  const latestVersionPrompt = template?.latestVersion?.prompt ?? "";
-  const seededVersionRef = React.useRef<string | null>(null);
-  if (latestVersionId && seededVersionRef.current !== latestVersionId && !isDirty) {
-    seededVersionRef.current = latestVersionId;
-    // will be applied in layout effect
-  }
-  React.useLayoutEffect(() => {
-    if (latestVersionId && seededVersionRef.current !== latestVersionId && !isDirty) {
-      seededVersionRef.current = latestVersionId;
-      setEditingPrompt(latestVersionPrompt);
-      setActiveVersionId(latestVersionId);
+  const loadVersion = (version: TemplateVersion) => {
+    setPrompt(version.prompt);
+    setSystemPrompt(version.systemPrompt ?? "");
+    setSchemaOverrides(version.variablesSchema ?? {});
+    setLoadedVersionId(version.id);
+  };
+
+  useEffect(() => {
+    if (!template) return;
+    setName(template.name);
+    setDescription(template.description ?? "");
+    if (activeVersion && loadedVersionId === null) loadVersion(activeVersion);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [template]);
+
+  const schema = useMemo(() => syncSchemaWithPrompt(prompt, schemaOverrides), [prompt, schemaOverrides]);
+  const schemaKey = JSON.stringify(schema);
+
+  useEffect(() => {
+    setTestValues((current) => {
+      const defaults = defaultValues(schema);
+      return Object.fromEntries(Object.keys(schema).map((n) => [n, current[n] ?? defaults[n]]));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schemaKey]);
+
+  const updateVariable = (variable: string, patch: Partial<VariableDefinition>) =>
+    setSchemaOverrides({ ...schema, [variable]: { ...schema[variable], ...patch } });
+
+  const dirty =
+    !!activeVersion &&
+    (prompt !== activeVersion.prompt ||
+      systemPrompt !== (activeVersion.systemPrompt ?? "") ||
+      stableStringify(schema) !== stableStringify(activeVersion.variablesSchema ?? {}));
+  const metaDirty = !!template && (name !== template.name || description !== (template.description ?? ""));
+
+  const saveMeta = async () => {
+    try {
+      await updateTemplate.mutateAsync({ name: name.trim(), description });
+      success({ title: "Details saved" });
+    } catch (err) {
+      showError({ title: "Could not save details", description: err instanceof Error ? err.message : "Unknown error" });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: only re-run when version id changes
-  }, [latestVersionId]);
+  };
 
-  // Seed default model
-  const seededModelRef = React.useRef(false);
-  React.useLayoutEffect(() => {
-    if (modelsData && !seededModelRef.current) {
-      const textModel = modelsData.find((m) => m.capabilities?.includes("text"));
-      if (textModel) { seededModelRef.current = true; setSelectedModel(textModel.id); }
-    }
-  }, [modelsData]);
-
-  // Derive variables from current prompt
-  const slots = extractVariables(editingPrompt);
-
-  function handleSaveVersion(e: React.FormEvent) {
-    e.preventDefault();
-    if (!editingPrompt.trim()) return;
-    createVersion.mutate(
-      { prompt: editingPrompt.trim() },
-      {
-        onSuccess: (v) => {
-          setIsDirty(false);
-          setActiveVersionId(v.id);
-        },
-      }
-    );
-  }
-
-  function handleGenerate(e: React.FormEvent) {
-    e.preventDefault();
-    setGenerateError(null);
-    setResult(null);
-    generate.mutate(
-      {
-        model: selectedModel,
-        templateId,
-        templateVersionId: activeVersionId ?? undefined,
-        variables,
+  const saveVersion = async () => {
+    try {
+      const version = await createVersion.mutateAsync({
+        prompt,
         systemPrompt: systemPrompt.trim() || undefined,
-        temperature,
-        maxTokens,
-      },
-      {
-        onSuccess: (res) => setResult(res),
-        onError: (err: Error) => setGenerateError(err.message),
-      }
-    );
-  }
+        variablesSchema: schema,
+      });
+      setLoadedVersionId(version.id);
+      success({ title: `Saved as version ${version.version}`, description: "It is now the active version." });
+    } catch (err) {
+      showError({ title: "Could not save version", description: err instanceof Error ? err.message : "Unknown error" });
+    }
+  };
 
-  if (isLoading || !template) {
+  const activate = async (version: TemplateVersion) => {
+    try {
+      await activateVersion.mutateAsync(version.id);
+      loadVersion(version);
+      success({ title: `Version ${version.version} is now active` });
+    } catch (err) {
+      showError({ title: "Could not activate version", description: err instanceof Error ? err.message : "Unknown error" });
+    }
+  };
+
+  const testErrors = validateValues(schema, testValues);
+
+  if (isLoading) return <LoadingState message="Loading template…" />;
+  if (error || !template) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <Skeleton height={28} width={240} />
-        <Skeleton height={200} />
-      </div>
+      <ErrorState
+        fullHeight={false}
+        title="Could not load template"
+        message={error instanceof Error ? error.message : "Template not found"}
+        action={{ label: "Try again", onClick: () => refetch() }}
+        secondaryAction={{ label: "Back to templates", onClick: () => (window.location.href = `/projects/${projectId}/templates`) }}
+      />
     );
   }
-
-  const textModels = modelsData?.filter((m) => m.capabilities?.includes("text")) ?? [];
-  const imageModels = modelsData?.filter((m) => m.capabilities?.includes("image")) ?? [];
 
   return (
-    <div>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-        <button
-          onClick={() => router.push(`/projects/${projectId}/templates`)}
-          style={{ background: "none", border: "none", color: "var(--color-muted)", cursor: "pointer", fontSize: 20, padding: 0 }}
+    <div className="space-y-6">
+      <div>
+        <Link
+          href={`/projects/${projectId}/templates`}
+          className="inline-flex items-center gap-1 text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text)]"
         >
-          ←
-        </button>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>{template.name}</h1>
-          {template.description && (
-            <p style={{ color: "var(--color-muted)", fontSize: 13, margin: "2px 0 0" }}>{template.description}</p>
-          )}
+          <ArrowLeft size={14} /> Templates
+        </Link>
+        <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+          <div className="grid min-w-[280px] flex-1 gap-3 md:grid-cols-2">
+            <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input label="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" disabled={!metaDirty || !name.trim()} loading={updateTemplate.isPending} onClick={saveMeta}>
+              Save details
+            </Button>
+            <Link
+              href={`/projects/${projectId}/studio?templateId=${templateId}`}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[color:var(--primary-600)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--primary-700)]"
+            >
+              <Play size={14} /> Use in Studio
+            </Link>
+          </div>
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 24, alignItems: "flex-start" }}>
-        {/* Left: Prompt Editor + Generate Panel */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          {/* Prompt Editor */}
-          <Card style={{ padding: 20 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <h2 style={{ fontSize: 15, fontWeight: 600, margin: 0 }}>Prompt Editor</h2>
-              {isDirty && (
-                <span style={{ fontSize: 12, color: "var(--color-warning, orange)" }}>Unsaved changes</span>
-              )}
-            </div>
-            <textarea
-              rows={10}
-              value={editingPrompt}
-              onChange={(e) => { setEditingPrompt(e.target.value); setIsDirty(true); }}
-              placeholder={"Write your prompt here.\nUse {{variable_name}} for dynamic slots."}
-              style={{
-                width: "100%", padding: "10px 12px", borderRadius: 6,
-                border: "1px solid var(--color-border)", background: "var(--color-surface)",
-                fontSize: 14, color: "var(--color-text)", resize: "vertical",
-                boxSizing: "border-box", fontFamily: "monospace",
-              }}
-            />
-            {slots.length > 0 && (
-              <div style={{ marginTop: 10 }}>
-                <p style={{ fontSize: 12, color: "var(--color-muted)", marginBottom: 6 }}>
-                  Detected variables: {slots.map((s) => (
-                    <code key={s} style={{ background: "var(--color-border)", borderRadius: 3, padding: "1px 5px", marginRight: 4 }}>{`{{${s}}}`}</code>
-                  ))}
-                </p>
-              </div>
-            )}
-            <div style={{ display: "flex", gap: 8, marginTop: 12, justifyContent: "flex-end" }}>
-              {isDirty && (
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <Card padding="lg">
+            <CardHeader>
+              <CardTitle>Prompt</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Textarea
+                aria-label="Prompt"
+                rows={9}
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                helperText="Placeholders like {{topic}} become fields automatically."
+              />
+              <Textarea label="System prompt (optional)" rows={2} value={systemPrompt} onChange={(e) => setSystemPrompt(e.target.value)} />
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs text-[color:var(--text-muted)]">
+                  {dirty ? "Unsaved changes — saving creates a new version." : "Matches the active version."}
+                </span>
                 <Button
-                  variant="secondary"
-                  onClick={() => { setEditingPrompt(template.latestVersion?.prompt ?? ""); setIsDirty(false); }}
+                  icon={<Save size={16} />}
+                  disabled={!dirty || prompt.trim().length < 10}
+                  loading={createVersion.isPending}
+                  onClick={saveVersion}
                 >
-                  Discard
+                  Save as new version
                 </Button>
-              )}
-              <Button
-                variant="primary"
-                onClick={handleSaveVersion}
-                disabled={!isDirty || createVersion.isPending}
-              >
-                {createVersion.isPending ? "Saving…" : "Save as New Version"}
-              </Button>
-            </div>
+              </div>
+            </CardContent>
           </Card>
 
-          {/* Generate Panel */}
-          <Card style={{ padding: 20 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 16px" }}>Generate</h2>
-            <form onSubmit={handleGenerate} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {/* Model selector */}
-              <div>
-                <label style={{ fontSize: 13, fontWeight: 500, display: "block", marginBottom: 4 }}>Model</label>
-                <select
-                  value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
-                  style={{
-                    width: "100%", padding: "8px 12px", borderRadius: 6,
-                    border: "1px solid var(--color-border)", background: "var(--color-surface)",
-                    fontSize: 14, color: "var(--color-text)",
-                  }}
-                >
-                  {textModels.length > 0 && <optgroup label="Text Models">{textModels.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</optgroup>}
-                  {imageModels.length > 0 && <optgroup label="Image Models">{imageModels.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</optgroup>}
-                </select>
-              </div>
-
-              {/* Variable inputs */}
-              {slots.length > 0 && (
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 500, display: "block", marginBottom: 8 }}>Variables</label>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {slots.map((slot) => (
-                      <div key={slot} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <code style={{ fontSize: 12, minWidth: 120, color: "var(--color-muted)" }}>{`{{${slot}}}`}</code>
+          <Card padding="lg">
+            <CardHeader>
+              <CardTitle>Variables</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {Object.keys(schema).length === 0 ? (
+                <p className="text-sm text-[color:var(--text-muted)]">No variables yet. Add {"{{name}}"} to the prompt.</p>
+              ) : (
+                <div className="space-y-3">
+                  {Object.entries(schema).map(([variable, def]) => (
+                    <div
+                      key={variable}
+                      className="flex flex-wrap items-center gap-3 rounded-lg border border-[color:var(--border)] p-3"
+                    >
+                      <code className="min-w-[110px] text-sm font-semibold text-[color:var(--primary-600)]">{variable}</code>
+                      <select
+                        aria-label={`${variable} type`}
+                        className={smallInput}
+                        value={def.type}
+                        onChange={(e) => updateVariable(variable, { type: e.target.value as VariableType })}
+                      >
+                        {VARIABLE_TYPES.map((type) => (
+                          <option key={type} value={type}>
+                            {type}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        aria-label={`${variable} label`}
+                        className={`${smallInput} min-w-[140px] flex-1`}
+                        placeholder="Label (optional)"
+                        value={def.label ?? ""}
+                        onChange={(e) => updateVariable(variable, { label: e.target.value || undefined })}
+                      />
+                      {def.type === "select" && (
                         <input
-                          value={variables[slot] ?? ""}
-                          onChange={(e) => setVariables((v: Record<string, string>) => ({ ...v, [slot]: e.target.value }))}
-                          placeholder={slot}
-                          style={{
-                            flex: 1, padding: "6px 10px", borderRadius: 6,
-                            border: "1px solid var(--color-border)", background: "var(--color-surface)",
-                            fontSize: 13, color: "var(--color-text)",
-                          }}
+                          aria-label={`${variable} options`}
+                          className={`${smallInput} min-w-[160px] flex-1`}
+                          placeholder="Options, comma separated"
+                          value={(def.options ?? []).join(", ")}
+                          onChange={(e) =>
+                            updateVariable(variable, {
+                              options: e.target.value.split(",").map((o) => o.trim()).filter(Boolean),
+                            })
+                          }
                         />
-                      </div>
-                    ))}
-                  </div>
+                      )}
+                      <label className="flex items-center gap-1.5 text-sm text-[color:var(--text-secondary)]">
+                        <input
+                          type="checkbox"
+                          checked={!!def.required}
+                          onChange={(e) => updateVariable(variable, { required: e.target.checked })}
+                          className="accent-[color:var(--primary-600)]"
+                        />
+                        Required
+                      </label>
+                    </div>
+                  ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
 
-              {/* System prompt */}
-              <div>
-                <label style={{ fontSize: 13, fontWeight: 500, display: "block", marginBottom: 4 }}>System Prompt (optional)</label>
-                <textarea
-                  rows={2}
-                  value={systemPrompt}
-                  onChange={(e) => setSystemPrompt(e.target.value)}
-                  placeholder="You are a helpful assistant…"
-                  style={{
-                    width: "100%", padding: "8px 12px", borderRadius: 6,
-                    border: "1px solid var(--color-border)", background: "var(--color-surface)",
-                    fontSize: 13, color: "var(--color-text)", resize: "none", boxSizing: "border-box", fontFamily: "inherit",
-                  }}
-                />
+          <Card padding="lg">
+            <CardHeader>
+              <CardTitle>Preview</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <VariableForm
+                schema={schema}
+                values={testValues}
+                errors={testErrors}
+                onChange={(n, v) => setTestValues((c) => ({ ...c, [n]: v }))}
+              />
+              <pre className="max-h-56 overflow-auto whitespace-pre-wrap rounded-lg bg-[color:var(--surface-2)] p-3 text-sm text-[color:var(--text)]">
+                {renderPrompt(prompt, testValues)}
+              </pre>
+              <div className="flex flex-wrap items-center gap-3 text-xs text-[color:var(--text-muted)]">
+                ~{estimateTokens(renderPrompt(prompt, testValues))} tokens
+                <Button
+                  size="sm"
+                  variant="outline"
+                  loading={testTemplate.isPending}
+                  disabled={dirty}
+                  tooltip={dirty ? "Save a version first to test it on the server" : undefined}
+                  onClick={() => testTemplate.mutate(testValues)}
+                >
+                  Validate on server
+                </Button>
+                {testTemplate.data && (
+                  <span className={testTemplate.data.validation.isValid ? "text-[color:var(--success-dark)]" : "text-[color:var(--danger)]"}>
+                    {testTemplate.data.validation.isValid
+                      ? "Valid"
+                      : testTemplate.data.validation.errors.join("; ") || "Invalid"}
+                  </span>
+                )}
+                {testTemplate.error && (
+                  <span className="text-[color:var(--danger)]">
+                    {testTemplate.error instanceof Error ? testTemplate.error.message : "Validation failed"}
+                  </span>
+                )}
               </div>
-
-              {/* Params row */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 500, display: "block", marginBottom: 4 }}>Temperature: {temperature}</label>
-                  <input
-                    type="range" min={0} max={2} step={0.05}
-                    value={temperature}
-                    onChange={(e) => setTemperature(Number(e.target.value))}
-                    style={{ width: "100%" }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 500, display: "block", marginBottom: 4 }}>Max Tokens</label>
-                  <input
-                    type="number" min={64} max={8192} step={64}
-                    value={maxTokens}
-                    onChange={(e) => setMaxTokens(Number(e.target.value))}
-                    style={{
-                      width: "100%", padding: "6px 10px", borderRadius: 6,
-                      border: "1px solid var(--color-border)", background: "var(--color-surface)",
-                      fontSize: 13, color: "var(--color-text)", boxSizing: "border-box",
-                    }}
-                  />
-                </div>
-              </div>
-
-              <Button variant="primary" type="submit" disabled={generate.isPending || !selectedModel}>
-                {generate.isPending ? "Generating…" : "Run Generation"}
-              </Button>
-            </form>
-
-            {/* Error */}
-            {generateError && (
-              <div style={{ marginTop: 16, padding: 12, borderRadius: 6, background: "var(--color-error-bg, #fef2f2)", color: "var(--color-error, #dc2626)", fontSize: 13 }}>
-                {generateError}
-              </div>
-            )}
-
-            {/* Result */}
-            {result && (
-              <div style={{ marginTop: 20 }}>
-                <div style={{ fontSize: 12, color: "var(--color-muted)", marginBottom: 10 }}>
-                  Tokens: {result.usage.tokensIn} in / {result.usage.tokensOut} out · ${result.usage.costUsd.toFixed(6)} cost
-                </div>
-                {(result.candidates as GenerateCandidate[]).map((c: GenerateCandidate, i: number) => (
-                  <div key={c.id} style={{ marginTop: i > 0 ? 12 : 0 }}>
-                    <ResultCard candidate={c} />
-                  </div>
-                ))}
-              </div>
-            )}
+            </CardContent>
           </Card>
         </div>
 
-        {/* Right: Version History */}
-        <Card style={{ padding: 20 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 12px" }}>Versions ({template.versions.length})</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {[...template.versions].reverse().map((v) => (
+        <Card padding="lg" className="h-fit">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History size={16} /> Versions
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {template.versions.map((version) => (
               <div
-                key={v.id}
-                onClick={() => { setEditingPrompt(v.prompt); setActiveVersionId(v.id); setIsDirty(false); }}
-                style={{
-                  padding: "10px 12px", borderRadius: 6, cursor: "pointer",
-                  border: `1px solid ${activeVersionId === v.id ? "var(--color-primary-600)" : "var(--color-border)"}`,
-                  background: activeVersionId === v.id ? "var(--color-primary-50, rgba(99,102,241,0.05))" : "transparent",
-                }}
+                key={version.id}
+                className={`rounded-lg border p-3 ${
+                  version.isActive ? "border-[color:var(--primary-500)]" : "border-[color:var(--border)]"
+                }`}
               >
-                <div style={{ fontWeight: 600, fontSize: 13 }}>v{v.version}</div>
-                <div style={{ fontSize: 11, color: "var(--color-muted)", marginTop: 2 }}>
-                  {new Date(v.createdAt).toLocaleString()}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-[color:var(--text)]">Version {version.version}</span>
+                  {version.isActive && (
+                    <Badge size="sm" variant="success" icon={<CheckCircle2 size={12} />}>
+                      Active
+                    </Badge>
+                  )}
                 </div>
-                <div style={{ fontSize: 12, color: "var(--color-muted)", marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {v.prompt.slice(0, 60)}{v.prompt.length > 60 ? "…" : ""}
+                <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                  {timeAgo(version.createdAt)} · {version.generationCount} generation{version.generationCount === 1 ? "" : "s"}
+                </div>
+                <p className="mt-2 line-clamp-2 text-xs text-[color:var(--text-secondary)]">{version.prompt}</p>
+                <div className="mt-2 flex gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => loadVersion(version)}>
+                    Load
+                  </Button>
+                  {!version.isActive && (
+                    <Button size="sm" variant="outline" loading={activateVersion.isPending} onClick={() => activate(version)}>
+                      Make active
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
-          </div>
+          </CardContent>
         </Card>
       </div>
     </div>
-  );
-}
-
-function ResultCard({ candidate }: { candidate: GenerateCandidate }) {
-  const isImage = candidate.type === "image";
-  const backendBase = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3002";
-
-  return (
-    <Card style={{ padding: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-        <span style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", color: "var(--color-muted)" }}>
-          {candidate.type} · {candidate.metadata.model} · {candidate.metadata.latencyMs}ms
-        </span>
-        {candidate.downloadUrl && (
-          <a
-            href={`${backendBase}${candidate.downloadUrl}`}
-            download
-            style={{ fontSize: 12, color: "var(--color-primary-600)", textDecoration: "none" }}
-          >
-            Download
-          </a>
-        )}
-      </div>
-      {isImage ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={`${backendBase}${candidate.downloadUrl}`}
-          alt="Generated image"
-          style={{ maxWidth: "100%", borderRadius: 6 }}
-        />
-      ) : (
-        <pre style={{ whiteSpace: "pre-wrap", fontSize: 13, lineHeight: 1.6, margin: 0 }}>
-          {candidate.text}
-        </pre>
-      )}
-    </Card>
   );
 }

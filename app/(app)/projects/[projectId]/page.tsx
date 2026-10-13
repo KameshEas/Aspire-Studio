@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useParams, useRouter } from "next/navigation";
+import { FileText, History, Image as ImageIcon, Sparkles } from "lucide-react";
 import { useProject } from "../../../../lib/hooks";
 import { useActiveOrg } from "../../../../lib/org-context";
 import Card from "../../../../components/Card";
@@ -54,25 +55,25 @@ export default function ProjectDetailPage() {
       <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Studio</h2>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, marginBottom: 32 }}>
         <NavCard
-          icon="📝"
+          icon={<FileText size={22} />}
           label="Templates"
           description="Manage prompt templates"
           onClick={() => router.push(`/projects/${params.projectId}/templates`)}
         />
         <NavCard
-          icon="🎛️"
+          icon={<Sparkles size={22} />}
           label="Studio"
           description="Create ad-hoc generations"
           onClick={() => router.push(`/projects/${params.projectId}/studio`)}
         />
         <NavCard
-          icon="🖼️"
+          icon={<ImageIcon size={22} />}
           label="Artifacts"
           description="Browse generated outputs"
           onClick={() => router.push(`/projects/${params.projectId}/artifacts`)}
         />
         <NavCard
-          icon="🕒"
+          icon={<History size={22} />}
           label="History"
           description="View all generations"
           onClick={() => router.push(`/projects/${params.projectId}/generations`)}
@@ -118,23 +119,17 @@ export default function ProjectDetailPage() {
         ))}
       </div>
 
-      {/* Coming Soon Placeholder */}
-      <div style={{ marginTop: 40, textAlign: "center", color: "var(--color-muted)" }}>
-        <p style={{ fontSize: 14 }}>
-          Deployment panels and advanced analytics are coming in Phase 3+.
-        </p>
-      </div>
     </div>
   );
 }
 
-function NavCard({ icon, label, description, onClick }: { icon: string; label: string; description: string; onClick: () => void }) {
+function NavCard({ icon, label, description, onClick }: { icon: React.ReactNode; label: string; description: string; onClick: () => void }) {
   return (
     <Card
       style={{ padding: "16px 18px", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: 12 }}
       onClick={onClick}
     >
-      <span style={{ fontSize: 24 }}>{icon}</span>
+      <span style={{ color: "var(--primary-600)" }}>{icon}</span>
       <div>
         <div style={{ fontWeight: 600, fontSize: 14 }}>{label}</div>
         <div style={{ fontSize: 12, color: "var(--color-muted)", marginTop: 2 }}>{description}</div>

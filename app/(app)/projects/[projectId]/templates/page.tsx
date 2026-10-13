@@ -1,413 +1,220 @@
 "use client";
 
-import React from "react";
-import { useParams, useRouter } from "next/navigation";
+import React, { useState } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { Archive, FileText, Pencil, Play, Plus, Search } from "lucide-react";
 import { useActiveOrg } from "../../../../../lib/org-context";
-import { useTemplates, useCreateTemplate, useDeleteTemplate } from "../../../../../lib/hooks";
-import { useFormState } from "../../../../../lib/hooks/useFormState";
+import { useCreateTemplate, useDeleteTemplate, useTemplates } from "../../../../../lib/hooks";
 import { useToast } from "../../../../../lib/hooks/useToast";
-
+import { extractVariables, timeAgo } from "../../../../../lib/variables";
 import {
-  Container,
-  Flex,
-  Stack,
-  Form,
-  FormField,
-  Input,
-  Textarea,
+  Badge,
   Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
   Dialog,
   DialogContent,
-  useDialog,
-  LoadingState,
   EmptyState,
+  ErrorState,
+  Input,
+  SkeletonGrid,
+  Textarea,
+  useDialog,
 } from "../../../../../components/system";
 
+const MIN_PROMPT_LENGTH = 10;
+
 export default function TemplatesPage() {
-  const params = useParams<{ projectId: string }>();
-  const router = useRouter();
+  const { projectId } = useParams<{ projectId: string }>();
   const { activeOrgId } = useActiveOrg();
+  const orgId = activeOrgId ?? "";
   const { success, error: showError } = useToast();
 
-  const orgId = activeOrgId ?? "";
-  const projectId = params.projectId;
-
-  const { data: templates, isLoading } = useTemplates(orgId, projectId);
+  const { data, isLoading, error, refetch } = useTemplates(orgId, projectId);
   const createTemplate = useCreateTemplate(orgId, projectId);
   const deleteTemplate = useDeleteTemplate(orgId, projectId);
+  const dialog = useDialog();
 
-  const { isOpen: createOpen, open: openCreate, close: closeCreate } = useDialog();
-  const { isOpen: deleteOpen, open: openDelete, close: closeDelete } = useDialog();
+  const [search, setSearch] = useState("");
+  const [form, setForm] = useState({ name: "", description: "", prompt: "", systemPrompt: "" });
 
-  const [deleteTargetId, setDeleteTargetId] = React.useState<string | null>(null);
+  const templates = (data?.templates ?? []).filter((t) =>
+    `${t.name} ${t.description ?? ""} ${t.tags.join(" ")}`.toLowerCase().includes(search.trim().toLowerCase())
+  );
+  const detected = extractVariables(form.prompt);
+  const formValid = form.name.trim().length > 0 && form.prompt.trim().length >= MIN_PROMPT_LENGTH;
 
-  // Create template form
-  const createForm = useFormState({
-    initialValues: {
-      name: "",
-      description: "",
-      prompt: "",
-    },
-
-    validate: (values) => {
-      const errors: Record<string, string> = {};
-
-      if (!values.name.trim()) {
-        errors.name = "Template name is required";
-      } else if (values.name.length < 3) {
-        errors.name = "Minimum 3 characters";
-      }
-
-      if (!values.prompt.trim()) {
-        errors.prompt = "Prompt is required";
-      } else if (values.prompt.length < 10) {
-        errors.prompt = "Prompt should be at least 10 characters";
-      }
-
-      return errors;
-    },
-
-    onSubmit: async (values) => {
-      try {
-        const result = await createTemplate.mutateAsync({
-          name: values.name.trim(),
-          description: values.description.trim() || undefined,
-          prompt: values.prompt.trim(),
-        });
-
-        success({
-          title: "Template created!",
-          description: `${values.name} is ready to use`,
-          action: {
-            label: "Edit Template",
-            onClick: () => router.push(`/projects/${projectId}/templates/${result.id}`),
-          },
-        });
-
-        closeCreate();
-        createForm.resetForm();
-      } catch (err) {
-        showError({
-          title: "Failed to create template",
-          description: err instanceof Error ? err.message : "Unknown error",
-        });
-      }
-    },
-  });
-
-  const handleDelete = async () => {
-    if (!deleteTargetId) return;
-
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formValid) return;
     try {
-      await deleteTemplate.mutateAsync(deleteTargetId);
-
-      success({
-        title: "Template deleted",
-        description: "The template has been removed",
+      await createTemplate.mutateAsync({
+        name: form.name.trim(),
+        description: form.description.trim() || undefined,
+        prompt: form.prompt,
+        systemPrompt: form.systemPrompt.trim() || undefined,
       });
-
-      closeDelete();
-      setDeleteTargetId(null);
+      success({ title: "Template created", description: `"${form.name.trim()}" is ready to use in the Studio.` });
+      setForm({ name: "", description: "", prompt: "", systemPrompt: "" });
+      dialog.close();
     } catch (err) {
-      showError({
-        title: "Failed to delete template",
-        description: err instanceof Error ? err.message : "Unknown error",
-      });
+      showError({ title: "Could not create template", description: err instanceof Error ? err.message : "Unknown error" });
     }
   };
 
-  // Show loading state
-  if (isLoading) {
-    return <LoadingState message="Loading templates..." />;
-  }
-
-  // Show empty state
-  if (!templates?.length) {
-    return (
-      <Container size="xl">
-        <EmptyState
-          icon={<div className="text-6xl">📝</div>}
-          title="No templates yet"
-          description="Prompt templates are reusable prompts with variable slots like {{product}} and {{audience}}. Perfect for consistent, repeatable generation."
-          example='Example: "Write a social media post for {{product}} targeting {{audience}}"'
-          action={{
-            label: "Create Your First Template",
-            onClick: openCreate,
-          }}
-        />
-
-        {/* Create Dialog */}
-        <Dialog open={createOpen} onOpenChange={closeCreate}>
-          <DialogContent title="Create Prompt Template" closeButton>
-            <Form onSubmit={createForm.handleSubmit} disabled={createForm.isSubmitting}>
-              <Stack spacing="md">
-                <FormField
-                  label="Template Name"
-                  description="A clear name for this template"
-                  error={createForm.getError("name")}
-                  required
-                >
-                  <Input
-                    value={createForm.values.name}
-                    onChange={(e) => createForm.setValue("name", e.target.value)}
-                    placeholder="e.g., Product Description"
-                    autoFocus
-                  />
-                </FormField>
-
-                <FormField
-                  label="Description"
-                  description="What is this template for?"
-                >
-                  <Input
-                    value={createForm.values.description}
-                    onChange={(e) => createForm.setValue("description", e.target.value)}
-                    placeholder="e.g., E-commerce product pages"
-                  />
-                </FormField>
-
-                <FormField
-                  label="Prompt"
-                  description='Use {{"{variable}"}} to create dynamic slots that can be filled in later'
-                  error={createForm.getError("prompt")}
-                  required
-                >
-                  <Textarea
-                    value={createForm.values.prompt}
-                    onChange={(e) => createForm.setValue("prompt", e.target.value)}
-                    placeholder={`Example: "Write a compelling product description for {{product_name}} that appeals to {{target_audience}}."`}
-                    rows={6}
-                    maxLength={2000}
-                    showCharCount
-                  />
-                </FormField>
-
-                <Flex gap="sm" justify="end" className="mt-4">
-                  <Button
-                    variant="secondary"
-                    onClick={closeCreate}
-                    type="button"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    loading={createForm.isSubmitting}
-                    disabled={!createForm.isValid}
-                  >
-                    Create Template
-                  </Button>
-                </Flex>
-              </Stack>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </Container>
-    );
-  }
+  const handleArchive = async (id: string, name: string) => {
+    if (!window.confirm(`Archive "${name}"? It will no longer appear in the Studio.`)) return;
+    try {
+      await deleteTemplate.mutateAsync(id);
+      success({ title: "Template archived" });
+    } catch (err) {
+      showError({ title: "Could not archive template", description: err instanceof Error ? err.message : "Unknown error" });
+    }
+  };
 
   return (
-    <Container size="xl">
-      <Stack spacing="lg">
-        {/* Header */}
-        <Flex direction="row" justify="between" align="center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Prompt Templates</h1>
-            <p className="text-gray-600 mt-2">
-              {templates.length} template{templates.length !== 1 ? "s" : ""} · Reusable prompts with variable slots
-            </p>
-          </div>
-          <Button onClick={openCreate} size="lg">
-            ✨ New Template
-          </Button>
-        </Flex>
-
-        {/* Templates List */}
-        <div className="space-y-3">
-          {templates.map((template) => (
-            <TemplateCard
-              key={template.id}
-              template={template}
-              onOpen={() => router.push(`/projects/${projectId}/templates/${template.id}`)}
-              onDelete={() => {
-                setDeleteTargetId(template.id);
-                openDelete();
-              }}
-            />
-          ))}
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-[color:var(--text)]">Templates</h1>
+          <p className="mt-1 text-[color:var(--text-secondary)]">Reusable prompts with fill-in-the-blank variables.</p>
         </div>
-
-        {/* Create Dialog */}
-        <Dialog open={createOpen} onOpenChange={closeCreate}>
-          <DialogContent title="Create Prompt Template" closeButton>
-            <Form onSubmit={createForm.handleSubmit} disabled={createForm.isSubmitting}>
-              <Stack spacing="md">
-                <FormField
-                  label="Template Name"
-                  description="A clear name for this template"
-                  error={createForm.getError("name")}
-                  required
-                >
-                  <Input
-                    value={createForm.values.name}
-                    onChange={(e) => createForm.setValue("name", e.target.value)}
-                    placeholder="e.g., Product Description"
-                    autoFocus
-                  />
-                </FormField>
-
-                <FormField
-                  label="Description"
-                  description="What is this template for?"
-                >
-                  <Input
-                    value={createForm.values.description}
-                    onChange={(e) => createForm.setValue("description", e.target.value)}
-                    placeholder="e.g., E-commerce product pages"
-                  />
-                </FormField>
-
-                <FormField
-                  label="Prompt"
-                  description='Use {{"{variable}"}} to create dynamic slots that can be filled in later'
-                  error={createForm.getError("prompt")}
-                  required
-                >
-                  <Textarea
-                    value={createForm.values.prompt}
-                    onChange={(e) => createForm.setValue("prompt", e.target.value)}
-                    placeholder={`Example: "Write a compelling product description for {{product_name}} that appeals to {{target_audience}}."`}
-                    rows={6}
-                    maxLength={2000}
-                    showCharCount
-                  />
-                </FormField>
-
-                <Flex gap="sm" justify="end" className="mt-4">
-                  <Button
-                    variant="secondary"
-                    onClick={closeCreate}
-                    type="button"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    loading={createForm.isSubmitting}
-                    disabled={!createForm.isValid}
-                  >
-                    Create Template
-                  </Button>
-                </Flex>
-              </Stack>
-            </Form>
-          </DialogContent>
-        </Dialog>
-
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={deleteOpen} onOpenChange={closeDelete}>
-          <DialogContent title="Delete Template?" closeButton>
-            <Stack spacing="md">
-              <p className="text-gray-700">
-                This will permanently delete the template and all its versions. This action cannot be undone.
-              </p>
-
-              <Flex gap="sm" justify="end">
-                <Button
-                  variant="secondary"
-                  onClick={closeDelete}
-                  type="button"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="danger"
-                  onClick={handleDelete}
-                  loading={deleteTemplate.isPending}
-                >
-                  Delete Template
-                </Button>
-              </Flex>
-            </Stack>
-          </DialogContent>
-        </Dialog>
-      </Stack>
-    </Container>
-  );
-}
-
-interface Template {
-  id: string;
-  name: string;
-  description?: string | null;
-  versionCount?: number;
-  updatedAt: string;
-  createdBy?: { id?: string; name?: string | null; email: string } | null;
-}
-
-interface TemplateCardProps {
-  template: Template;
-  onOpen: () => void;
-  onDelete: () => void;
-}
-
-function TemplateCard({ template, onOpen, onDelete }: TemplateCardProps) {
-  return (
-    <button
-      onClick={onOpen}
-      className="
-        w-full text-left border border-gray-200 rounded-lg p-4
-        hover:border-indigo-300 hover:bg-indigo-50/30 hover:shadow-md
-        transition-all duration-200
-        focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
-        group
-      "
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-lg text-gray-900 group-hover:text-indigo-700 transition-colors">
-            {template.name}
-          </h3>
-
-          {template.description && (
-            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-              {template.description}
-            </p>
-          )}
-
-          <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-gray-500">
-            <span>📋 {template.versionCount} version{template.versionCount !== 1 ? "s" : ""}</span>
-            <span>📅 {new Date(template.updatedAt).toLocaleDateString()}</span>
-            {template.createdBy && (
-              <span>👤 by {template.createdBy.name || template.createdBy.email}</span>
-            )}
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpen();
-            }}
-          >
-            Edit
-          </Button>
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-          >
-            Delete
-          </Button>
-        </div>
+        <Button icon={<Plus size={16} />} onClick={dialog.open}>
+          New template
+        </Button>
       </div>
-    </button>
+
+      <Input
+        aria-label="Search templates"
+        placeholder="Search templates…"
+        icon={<Search size={16} />}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+      {isLoading ? (
+        <SkeletonGrid count={6} columns={3} />
+      ) : error ? (
+        <ErrorState
+          fullHeight={false}
+          title="Could not load templates"
+          message={error instanceof Error ? error.message : "Unknown error"}
+          action={{ label: "Try again", onClick: () => refetch() }}
+        />
+      ) : templates.length === 0 ? (
+        <EmptyState
+          fullHeight={false}
+          icon={<FileText size={40} className="text-[color:var(--text-muted)]" />}
+          title={search ? "No templates match your search" : "No templates yet"}
+          description={
+            search
+              ? "Try a different search term."
+              : "Create a template once, then generate on-brand content from a simple form."
+          }
+          example={search ? undefined : "Write a {{tone}} product description for {{product}}."}
+          action={search ? undefined : { label: "Create your first template", onClick: dialog.open }}
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {templates.map((template) => {
+            const variables = Object.keys(template.currentVersion?.variablesSchema ?? {});
+            return (
+              <Card key={template.id} variant="elevated" padding="lg" className="flex flex-col">
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="truncate">{template.name}</CardTitle>
+                    {template.currentVersion && <Badge size="sm" variant="primary">v{template.currentVersion.version}</Badge>}
+                  </div>
+                  <CardDescription className="line-clamp-2">
+                    {template.description || template.currentVersion?.prompt || "No description"}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="mt-auto space-y-4">
+                  <div className="flex flex-wrap gap-1.5">
+                    {variables.slice(0, 5).map((name) => (
+                      <Badge key={name} size="sm" variant="default">
+                        {`{{${name}}}`}
+                      </Badge>
+                    ))}
+                    {variables.length > 5 && <Badge size="sm" variant="default">+{variables.length - 5}</Badge>}
+                    {variables.length === 0 && <span className="text-xs text-[color:var(--text-muted)]">No variables</span>}
+                  </div>
+                  <div className="text-xs text-[color:var(--text-muted)]">
+                    {template.generationCount} generation{template.generationCount === 1 ? "" : "s"} · updated {timeAgo(template.updatedAt)}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/projects/${projectId}/studio?templateId=${template.id}`}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[color:var(--primary-600)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[color:var(--primary-700)]"
+                    >
+                      <Play size={14} /> Use
+                    </Link>
+                    <Link
+                      href={`/projects/${projectId}/templates/${template.id}`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--border)] px-3 py-1.5 text-sm font-medium text-[color:var(--text)] hover:bg-[color:var(--surface-hover)]"
+                    >
+                      <Pencil size={14} /> Edit
+                    </Link>
+                    <button
+                      type="button"
+                      aria-label={`Archive ${template.name}`}
+                      onClick={() => handleArchive(template.id, template.name)}
+                      className="ml-auto rounded-lg p-2 text-[color:var(--text-muted)] hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--danger)]"
+                    >
+                      <Archive size={16} />
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      <Dialog open={dialog.isOpen} onOpenChange={(open) => (open ? dialog.open() : dialog.close())}>
+        <DialogContent title="New template" description="Use {{variable}} placeholders to create fields you can fill in later." size="lg">
+          <form onSubmit={handleCreate} className="space-y-4">
+            <Input label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} maxLength={255} autoFocus />
+            <Input label="Description (optional)" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            <Textarea
+              label="Prompt"
+              rows={6}
+              value={form.prompt}
+              onChange={(e) => setForm({ ...form, prompt: e.target.value })}
+              placeholder="Write a {{tone}} product description for {{product}}."
+              helperText={`At least ${MIN_PROMPT_LENGTH} characters.`}
+            />
+            {detected.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-[color:var(--text-muted)]">
+                Variables detected:
+                {detected.map((name) => (
+                  <Badge key={name} size="sm" variant="primary">
+                    {name}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            <Textarea
+              label="System prompt (optional)"
+              rows={2}
+              value={form.systemPrompt}
+              onChange={(e) => setForm({ ...form, systemPrompt: e.target.value })}
+            />
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={dialog.close}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={!formValid} loading={createTemplate.isPending}>
+                Create template
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

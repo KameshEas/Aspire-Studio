@@ -5,7 +5,7 @@
  * Features: icon support, character count, accessibility
  */
 
-import React, { forwardRef, useState } from "react";
+import React, { forwardRef, useId, useState } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 
 // ─── Input Variants ───────────────────────────────────────
@@ -14,14 +14,14 @@ const inputVariants = cva(
   // Base styles with design system tokens
   `
     w-full px-3.5 py-2.5 text-sm font-medium
-    rounded-md border-2 border-var(--border)
-    bg-var(--surface-input)
-    text-var(--text)
-    placeholder:text-var(--text-muted)
+    rounded-md border-2 border-[color:var(--border)]
+    bg-[color:var(--surface-input)]
+    text-[color:var(--text)]
+    placeholder:text-[color:var(--text-muted)]
     transition-all duration-[var(--duration-base)] ease-[var(--easing-standard)]
-    focus:outline-none focus:border-var(--primary-500) focus:ring-2 focus:ring-var(--primary-500) focus:ring-opacity-10
-    dark:focus:ring-var(--primary-400) dark:focus:ring-opacity-20
-    disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-var(--surface-2)
+    focus:outline-none focus:border-[color:var(--primary-500)] focus:ring-2 focus:ring-[color:var(--primary-500)] focus:ring-opacity-10
+    dark:focus:ring-[color:var(--primary-400)] dark:focus:ring-opacity-20
+    disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-[color:var(--surface-2)]
     file:cursor-pointer file:border-0 file:bg-transparent file:px-0 file:text-sm file:font-medium
   `,
   {
@@ -29,17 +29,17 @@ const inputVariants = cva(
       state: {
         default: "",
         error: `
-          border-var(--danger) focus:border-var(--danger) focus:ring-var(--danger) focus:ring-opacity-10
+          border-[color:var(--danger)] focus:border-[color:var(--danger)] focus:ring-[color:var(--danger)] focus:ring-opacity-10
           dark:focus:ring-opacity-20 bg-[color-mix(in_srgb,var(--danger)_5%,white)]
           dark:bg-[color-mix(in_srgb,var(--danger)_5%,black)]
         `,
         success: `
-          border-var(--success) focus:border-var(--success) focus:ring-var(--success) focus:ring-opacity-10
+          border-[color:var(--success)] focus:border-[color:var(--success)] focus:ring-[color:var(--success)] focus:ring-opacity-10
           dark:focus:ring-opacity-20 bg-[color-mix(in_srgb,var(--success)_5%,white)]
           dark:bg-[color-mix(in_srgb,var(--success)_5%,black)]
         `,
         warning: `
-          border-var(--warning) focus:border-var(--warning) focus:ring-var(--warning) focus:ring-opacity-10
+          border-[color:var(--warning)] focus:border-[color:var(--warning)] focus:ring-[color:var(--warning)] focus:ring-opacity-10
           dark:focus:ring-opacity-20 bg-[color-mix(in_srgb,var(--warning)_5%,white)]
           dark:bg-[color-mix(in_srgb,var(--warning)_5%,black)]
         `,
@@ -98,17 +98,17 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     ref
   ) => {
     const [isFocused, setIsFocused] = useState(false);
+    const generatedId = useId();
+    const inputId = props.id ?? generatedId;
 
     const errorState =
-      error === true
+      error
         ? "error"
-        : error === false || !error
-          ? state
-          : success
-            ? "success"
-            : warning
-              ? "warning"
-              : state;
+        : success
+          ? "success"
+          : warning
+            ? "warning"
+            : state;
 
     const showClearButton = clearable && value && !disabled && (isFocused || value);
 
@@ -116,11 +116,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       <div className="w-full">
         {label && (
           <label
-            htmlFor={props.id}
-            className="block text-sm font-medium text-var(--text) mb-2 transition-colors"
+            htmlFor={inputId}
+            className="block text-sm font-medium text-[color:var(--text)] mb-2 transition-colors"
           >
             {label}
-            {props.required && <span className="text-var(--danger) ml-1">*</span>}
+            {props.required && <span className="text-[color:var(--danger)] ml-1">*</span>}
           </label>
         )}
 
@@ -129,7 +129,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           {/* Left icon */}
           {icon && iconPosition === "left" && (
             <span
-              className="absolute left-3.5 flex items-center justify-center text-var(--text-muted) pointer-events-none"
+              className="absolute left-3.5 flex items-center justify-center text-[color:var(--text-muted)] pointer-events-none"
               aria-hidden="true"
             >
               {icon}
@@ -156,11 +156,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               setIsFocused(false);
               props.onBlur?.(e);
             }}
-            aria-invalid={error === true}
+            id={inputId}
+            aria-invalid={!!error}
             aria-describedby={
-              error || helperText
-                ? `${props.id}-error-${error}-${props.id}-helper`
-                : undefined
+              error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined
             }
             {...props}
           />
@@ -168,7 +167,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           {/* Right icon */}
           {icon && iconPosition === "right" && !showClearButton && (
             <span
-              className="absolute right-3.5 flex items-center justify-center text-var(--text-muted) pointer-events-none"
+              className="absolute right-3.5 flex items-center justify-center text-[color:var(--text-muted)] pointer-events-none"
               aria-hidden="true"
             >
               {icon}
@@ -179,7 +178,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           {showClearButton && (
             <button
               type="button"
-              className="absolute right-3.5 flex items-center justify-center text-var(--text-muted) hover:text-var(--text) transition-colors disabled:opacity-50"
+              className="absolute right-3.5 flex items-center justify-center text-[color:var(--text-muted)] hover:text-[color:var(--text)] transition-colors disabled:opacity-50"
               onClick={() => {
                 onClear?.();
                 onChange?.({ target: { value: "" } } as any);
@@ -197,7 +196,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
           {/* Status indicator icons */}
           {error && !icon && (
-            <span className="absolute right-3.5 flex items-center justify-center text-var(--danger)" aria-hidden="true">
+            <span className="absolute right-3.5 flex items-center justify-center text-[color:var(--danger)]" aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 7v6M12 17h.01" fill="var(--surface-input)" />
@@ -206,7 +205,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
 
           {success && !icon && !error && (
-            <span className="absolute right-3.5 flex items-center justify-center text-var(--success)" aria-hidden="true">
+            <span className="absolute right-3.5 flex items-center justify-center text-[color:var(--success)]" aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
               </svg>
@@ -217,8 +216,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {/* Error message */}
         {error && typeof error === "string" && (
           <p
-            id={`${props.id}-error-${error}`}
-            className="mt-1.5 text-sm font-medium text-var(--danger) flex items-center gap-1"
+            id={`${inputId}-error`}
+            className="mt-1.5 text-sm font-medium text-[color:var(--danger)] flex items-center gap-1"
             role="alert"
           >
             <span>{error}</span>
@@ -228,8 +227,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {/* Helper text */}
         {helperText && !error && (
           <p
-            id={`${props.id}-helper`}
-            className="mt-1.5 text-sm text-var(--text-muted)"
+            id={`${inputId}-helper`}
+            className="mt-1.5 text-sm text-[color:var(--text-muted)]"
           >
             {helperText}
           </p>
@@ -272,28 +271,28 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     ref
   ) => {
     const [isFocused, setIsFocused] = useState(false);
+    const generatedId = useId();
+    const inputId = props.id ?? generatedId;
     const charCount = typeof value === "string" ? value.length : 0;
 
     const errorState =
-      error === true
+      error
         ? "error"
-        : error === false || !error
-          ? state
-          : success
-            ? "success"
-            : warning
-              ? "warning"
-              : state;
+        : success
+          ? "success"
+          : warning
+            ? "warning"
+            : state;
 
     return (
       <div className="w-full">
         {label && (
           <label
-            htmlFor={props.id}
-            className="block text-sm font-medium text-var(--text) mb-2"
+            htmlFor={inputId}
+            className="block text-sm font-medium text-[color:var(--text)] mb-2"
           >
             {label}
-            {props.required && <span className="text-var(--danger) ml-1">*</span>}
+            {props.required && <span className="text-[color:var(--danger)] ml-1">*</span>}
           </label>
         )}
 
@@ -303,7 +302,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             className={`
               ${inputVariants({ state: errorState, className })}
               resize-none overflow-y-auto
-              focus:outline-none focus:ring-2 focus:ring-var(--primary-500)
+              focus:outline-none focus:ring-2 focus:ring-[color:var(--primary-500)]
               disabled:opacity-50 disabled:cursor-not-allowed
             `}
             disabled={disabled}
@@ -319,11 +318,10 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
               setIsFocused(false);
               props.onBlur?.(e);
             }}
-            aria-invalid={error === true}
+            id={inputId}
+            aria-invalid={!!error}
             aria-describedby={
-              error || helperText
-                ? `${props.id}-error-${error}-${props.id}-helper`
-                : undefined
+              error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined
             }
             {...props}
           />
@@ -334,15 +332,15 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           <div>
             {error && typeof error === "string" && (
               <p
-                id={`${props.id}-error-${error}`}
-                className="text-sm font-medium text-var(--danger)"
+                id={`${inputId}-error`}
+                className="text-sm font-medium text-[color:var(--danger)]"
                 role="alert"
               >
                 {error}
               </p>
             )}
             {helperText && !error && (
-              <p id={`${props.id}-helper`} className="text-sm text-var(--text-muted)">
+              <p id={`${inputId}-helper`} className="text-sm text-[color:var(--text-muted)]">
                 {helperText}
               </p>
             )}
@@ -351,8 +349,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           {showCharCount && maxLength && (
             <span className={`text-xs font-medium ${
               charCount > maxLength * 0.9
-                ? "text-var(--warning)"
-                : "text-var(--text-muted)"
+                ? "text-[color:var(--warning)]"
+                : "text-[color:var(--text-muted)]"
             }`}>
               {charCount}/{maxLength}
             </span>
@@ -399,7 +397,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="hover:text-var(--text) transition-colors"
+              className="hover:text-[color:var(--text)] transition-colors"
               tabIndex={-1}
             >
               {showPassword ? (
@@ -423,23 +421,23 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
         {showStrength && strength && (
           <div className="mt-2">
             <div className="flex items-center gap-2">
-              <div className="flex-1 h-1.5 rounded-full bg-var(--border) overflow-hidden">
+              <div className="flex-1 h-1.5 rounded-full bg-[color:var(--border)] overflow-hidden">
                 <div
                   className={`h-full transition-all ${
                     strength === "weak"
-                      ? "w-1/3 bg-var(--danger)"
+                      ? "w-1/3 bg-[color:var(--danger)]"
                       : strength === "medium"
-                        ? "w-2/3 bg-var(--warning)"
-                        : "w-full bg-var(--success)"
+                        ? "w-2/3 bg-[color:var(--warning)]"
+                        : "w-full bg-[color:var(--success)]"
                   }`}
                 />
               </div>
               <span className={`text-xs font-medium ${
                 strength === "weak"
-                  ? "text-var(--danger)"
+                  ? "text-[color:var(--danger)]"
                   : strength === "medium"
-                    ? "text-var(--warning)"
-                    : "text-var(--success)"
+                    ? "text-[color:var(--warning)]"
+                    : "text-[color:var(--success)]"
               }`}>
                 {strength.charAt(0).toUpperCase() + strength.slice(1)}
               </span>

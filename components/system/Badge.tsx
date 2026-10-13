@@ -18,14 +18,14 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-var(--slate-100) text-var(--slate-900) dark:bg-var(--slate-800) dark:text-var(--slate-50)",
-        primary: "bg-var(--primary-100) text-var(--primary-900) dark:bg-var(--primary-900) dark:text-var(--primary-100)",
-        success: "bg-var(--success-light) text-var(--success-dark) dark:bg-var(--emerald-900) dark:text-var(--emerald-100)",
-        warning: "bg-var(--warning-light) text-var(--warning-dark) dark:bg-[color-mix(in_srgb,var(--warning)_20%,black)] dark:text-var(--warning)",
-        danger: "bg-var(--danger-light) text-var(--danger-dark) dark:bg-[color-mix(in_srgb,var(--danger)_20%,black)] dark:text-var(--danger)",
-        info: "bg-var(--info-light) text-var(--info-dark) dark:bg-[color-mix(in_srgb,var(--info)_20%,black)] dark:text-var(--info)",
-        pending: "bg-[color-mix(in_srgb,var(--pending)_15%,white)] text-var(--pending) dark:bg-[color-mix(in_srgb,var(--pending)_20%,black)]",
-        processing: "bg-[color-mix(in_srgb,var(--processing)_15%,white)] text-var(--processing) dark:bg-[color-mix(in_srgb,var(--processing)_20%,black)]",
+        default: "bg-[color:var(--slate-100)] text-[color:var(--slate-900)] dark:bg-[color:var(--slate-800)] dark:text-[color:var(--slate-50)]",
+        primary: "bg-[color:var(--primary-100)] text-[color:var(--primary-900)] dark:bg-[color:var(--primary-900)] dark:text-[color:var(--primary-100)]",
+        success: "bg-[color:var(--success-light)] text-[color:var(--success-dark)] dark:bg-[color:var(--emerald-900)] dark:text-[color:var(--emerald-100)]",
+        warning: "bg-[color:var(--warning-light)] text-[color:var(--warning-dark)] dark:bg-[color-mix(in_srgb,var(--warning)_20%,black)] dark:text-[color:var(--warning)]",
+        danger: "bg-[color:var(--danger-light)] text-[color:var(--danger-dark)] dark:bg-[color-mix(in_srgb,var(--danger)_20%,black)] dark:text-[color:var(--danger)]",
+        info: "bg-[color:var(--info-light)] text-[color:var(--info-dark)] dark:bg-[color-mix(in_srgb,var(--info)_20%,black)] dark:text-[color:var(--info)]",
+        pending: "bg-[color-mix(in_srgb,var(--pending)_15%,white)] text-[color:var(--pending)] dark:bg-[color-mix(in_srgb,var(--pending)_20%,black)]",
+        processing: "bg-[color-mix(in_srgb,var(--processing)_15%,white)] text-[color:var(--processing)] dark:bg-[color-mix(in_srgb,var(--processing)_20%,black)]",
       },
 
       size: {
@@ -102,7 +102,7 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
           <button
             type="button"
             onClick={onRemove}
-            className="ml-1 inline-flex items-center justify-center rounded hover:opacity-70 transition-opacity focus:outline-none focus:ring-2 focus:ring-current focus:ring-offset-2 dark:focus:ring-offset-var(--bg)"
+            className="ml-1 inline-flex items-center justify-center rounded hover:opacity-70 transition-opacity focus:outline-none focus:ring-2 focus:ring-current focus:ring-offset-2 dark:focus:ring-offset-[color:var(--bg)]"
             aria-label={`Remove ${children}`}
             tabIndex={-1}
           >

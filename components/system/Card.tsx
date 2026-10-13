@@ -13,33 +13,33 @@ const cardVariants = cva(
   // Base card styles
   `
     rounded-lg border transition-all duration-[var(--duration-base)] ease-[var(--easing-standard)]
-    focus-within:ring-2 focus-within:ring-var(--primary-500) focus-within:ring-offset-2
-    dark:focus-within:ring-offset-var(--bg)
+    focus-within:ring-2 focus-within:ring-[color:var(--primary-500)] focus-within:ring-offset-2
+    dark:focus-within:ring-offset-[color:var(--bg)]
   `,
   {
     variants: {
       variant: {
         default: `
-          bg-var(--surface-1) border-var(--border)
-          hover:border-var(--border-strong) hover:shadow-[var(--shadow-sm)]
+          bg-[color:var(--surface-1)] border-[color:var(--border)]
+          hover:border-[color:var(--border-strong)] hover:shadow-[var(--shadow-sm)]
         `,
         elevated: `
-          bg-var(--surface-1) border-var(--border)
+          bg-[color:var(--surface-1)] border-[color:var(--border)]
           shadow-[var(--shadow-base)]
-          hover:shadow-[var(--shadow-md)] hover:border-var(--border-strong)
+          hover:shadow-[var(--shadow-md)] hover:border-[color:var(--border-strong)]
         `,
         bordered: `
-          bg-var(--surface-1) border-2 border-var(--border-light)
-          hover:border-var(--primary-500) hover:bg-var(--surface-2)
+          bg-[color:var(--surface-1)] border-2 border-[color:var(--border-light)]
+          hover:border-[color:var(--primary-500)] hover:bg-[color:var(--surface-2)]
         `,
         interactive: `
-          bg-var(--surface-1) border-var(--border)
-          cursor-pointer hover:bg-var(--surface-2) hover:shadow-[var(--shadow-md)] hover:border-var(--primary-600)
-          active:bg-var(--surface-active)
+          bg-[color:var(--surface-1)] border-[color:var(--border)]
+          cursor-pointer hover:bg-[color:var(--surface-2)] hover:shadow-[var(--shadow-md)] hover:border-[color:var(--primary-600)]
+          active:bg-[color:var(--surface-active)]
         `,
         ghost: `
-          bg-transparent border border-dashed border-var(--border)
-          hover:border-var(--primary-500) hover:bg-var(--surface-hover)
+          bg-transparent border border-dashed border-[color:var(--border)]
+          hover:border-[color:var(--primary-500)] hover:bg-[color:var(--surface-hover)]
         `,
       },
 
@@ -123,7 +123,7 @@ export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={`flex items-start justify-between pb-4 border-b border-var(--border) ${className || ""}`}
+      className={`flex items-start justify-between pb-4 border-b border-[color:var(--border)] ${className || ""}`}
       {...props}
     />
   )
@@ -139,7 +139,7 @@ export const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(
   ({ className, ...props }, ref) => (
     <h3
       ref={ref}
-      className={`text-lg font-semibold text-var(--text) ${className || ""}`}
+      className={`text-lg font-semibold text-[color:var(--text)] ${className || ""}`}
       {...props}
     />
   )
@@ -155,7 +155,7 @@ export const CardDescription = forwardRef<HTMLParagraphElement, CardDescriptionP
   ({ className, ...props }, ref) => (
     <p
       ref={ref}
-      className={`text-sm text-var(--text-secondary) ${className || ""}`}
+      className={`text-sm text-[color:var(--text-secondary)] ${className || ""}`}
       {...props}
     />
   )
@@ -187,7 +187,7 @@ export const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={`flex items-center justify-end gap-2 pt-4 border-t border-var(--border) ${className || ""}`}
+      className={`flex items-center justify-end gap-2 pt-4 border-t border-[color:var(--border)] ${className || ""}`}
       {...props}
     />
   )
@@ -205,11 +205,11 @@ export interface CardBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 export const CardBadge = forwardRef<HTMLSpanElement, CardBadgeProps>(
   ({ className, variant = "default", size = "sm", ...props }, ref) => {
     const variants = {
-      default: "bg-var(--slate-100) text-var(--slate-900) dark:bg-var(--slate-800) dark:text-var(--slate-50)",
-      primary: "bg-var(--primary-100) text-var(--primary-900) dark:bg-var(--primary-900) dark:text-var(--primary-100)",
-      success: "bg-var(--success-light) text-var(--success-dark) dark:bg-var(--emerald-900) dark:text-var(--emerald-100)",
-      warning: "bg-var(--warning-light) text-var(--warning-dark) dark:bg-[color-mix(in_srgb,var(--warning)_20%,black)] dark:text-var(--warning)",
-      danger: "bg-var(--danger-light) text-var(--danger-dark) dark:bg-[color-mix(in_srgb,var(--danger)_20%,black)] dark:text-var(--danger)",
+      default: "bg-[color:var(--slate-100)] text-[color:var(--slate-900)] dark:bg-[color:var(--slate-800)] dark:text-[color:var(--slate-50)]",
+      primary: "bg-[color:var(--primary-100)] text-[color:var(--primary-900)] dark:bg-[color:var(--primary-900)] dark:text-[color:var(--primary-100)]",
+      success: "bg-[color:var(--success-light)] text-[color:var(--success-dark)] dark:bg-[color:var(--emerald-900)] dark:text-[color:var(--emerald-100)]",
+      warning: "bg-[color:var(--warning-light)] text-[color:var(--warning-dark)] dark:bg-[color-mix(in_srgb,var(--warning)_20%,black)] dark:text-[color:var(--warning)]",
+      danger: "bg-[color:var(--danger-light)] text-[color:var(--danger-dark)] dark:bg-[color-mix(in_srgb,var(--danger)_20%,black)] dark:text-[color:var(--danger)]",
     };
 
     const sizes = {

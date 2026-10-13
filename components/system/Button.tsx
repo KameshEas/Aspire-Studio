@@ -17,8 +17,8 @@ const buttonVariants = cva(
     whitespace-nowrap rounded-md
     transition-all duration-[var(--duration-base)] ease-[var(--easing-standard)]
     disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none
-    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-var(--primary-500) focus-visible:ring-offset-2
-    dark:focus-visible:ring-var(--primary-400) dark:focus-visible:ring-offset-var(--bg)
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary-500)] focus-visible:ring-offset-2
+    dark:focus-visible:ring-[color:var(--primary-400)] dark:focus-visible:ring-offset-[color:var(--bg)]
     relative group
   `,
   {
@@ -26,52 +26,52 @@ const buttonVariants = cva(
       variant: {
         // Primary - Bold, high emphasis
         primary: `
-          bg-var(--primary-600) text-white
-          hover:bg-var(--primary-700) hover:shadow-[var(--shadow-md)]
-          active:bg-var(--primary-800) active:shadow-[var(--shadow-base)]
-          dark:bg-var(--primary-600) dark:hover:bg-var(--primary-500) dark:active:bg-var(--primary-700)
+          bg-[color:var(--primary-600)] text-white
+          hover:bg-[color:var(--primary-700)] hover:shadow-[var(--shadow-md)]
+          active:bg-[color:var(--primary-800)] active:shadow-[var(--shadow-base)]
+          dark:bg-[color:var(--primary-600)] dark:hover:bg-[color:var(--primary-500)] dark:active:bg-[color:var(--primary-700)]
         `,
 
         // Secondary - Medium emphasis with background
         secondary: `
-          bg-var(--slate-100) text-var(--slate-900)
-          hover:bg-var(--slate-200) hover:shadow-[var(--shadow-sm)]
-          active:bg-var(--slate-300)
-          dark:bg-var(--slate-800) dark:text-var(--slate-50)
-          dark:hover:bg-var(--slate-700) dark:active:bg-var(--slate-600)
+          bg-[color:var(--slate-100)] text-[color:var(--slate-900)]
+          hover:bg-[color:var(--slate-200)] hover:shadow-[var(--shadow-sm)]
+          active:bg-[color:var(--slate-300)]
+          dark:bg-[color:var(--slate-800)] dark:text-[color:var(--slate-50)]
+          dark:hover:bg-[color:var(--slate-700)] dark:active:bg-[color:var(--slate-600)]
         `,
 
         // Outline - Bordered, lower emphasis
         outline: `
-          border-2 border-var(--border) bg-transparent text-var(--text)
-          hover:border-var(--primary-600) hover:text-var(--primary-600) hover:bg-var(--primary-50)
-          active:border-var(--primary-700) active:bg-var(--primary-100)
-          dark:hover:bg-var(--primary-950) dark:active:bg-var(--primary-900)
+          border-2 border-[color:var(--border)] bg-transparent text-[color:var(--text)]
+          hover:border-[color:var(--primary-600)] hover:text-[color:var(--primary-600)] hover:bg-[color:var(--primary-50)]
+          active:border-[color:var(--primary-700)] active:bg-[color:var(--primary-100)]
+          dark:hover:bg-[color:var(--primary-950)] dark:active:bg-[color:var(--primary-900)]
         `,
 
         // Ghost - Minimal, text only
         ghost: `
-          bg-transparent text-var(--primary-600)
-          hover:bg-var(--primary-50) hover:text-var(--primary-700)
-          active:bg-var(--primary-100)
-          dark:text-var(--primary-400) dark:hover:bg-var(--primary-950)
-          dark:active:bg-var(--primary-900)
+          bg-transparent text-[color:var(--primary-600)]
+          hover:bg-[color:var(--primary-50)] hover:text-[color:var(--primary-700)]
+          active:bg-[color:var(--primary-100)]
+          dark:text-[color:var(--primary-400)] dark:hover:bg-[color:var(--primary-950)]
+          dark:active:bg-[color:var(--primary-900)]
         `,
 
         // Danger - For destructive actions
         danger: `
-          bg-var(--danger) text-white
+          bg-[color:var(--danger)] text-white
           hover:bg-[#dc2626] hover:shadow-[var(--shadow-md)]
           active:bg-[#b91c1c]
-          dark:bg-var(--danger) dark:hover:bg-[#f87171] dark:active:bg-[#dc2626]
+          dark:bg-[color:var(--danger)] dark:hover:bg-[#f87171] dark:active:bg-[#dc2626]
         `,
 
         // Success - For positive actions
         success: `
-          bg-var(--success) text-white
+          bg-[color:var(--success)] text-white
           hover:bg-[#16a34a] hover:shadow-[var(--shadow-md)]
           active:bg-[#15803d]
-          dark:bg-var(--success) dark:hover:bg-[#4ade80] dark:active:bg-[#16a34a]
+          dark:bg-[color:var(--success)] dark:hover:bg-[#4ade80] dark:active:bg-[#16a34a]
         `,
       },
 
